@@ -5,6 +5,13 @@ import { getAllTasks, getInboxTasks, createTask, setTaskStatus, deleteTask, upda
 import { getHabits, createHabit, deleteHabit, getHabitLogs, toggleHabitLog } from "../db/habits";
 
 export type View = "inbox" | "daily" | "weekly" | "goals" | "habits";
+export type Theme = "cosmic" | "arctic" | "midnight";
+
+export const THEMES: { id: Theme; name: string; dot1: string; dot2: string }[] = [
+  { id: "cosmic",   name: "Cosmic",   dot1: "#7c3aed", dot2: "#ec4899" },
+  { id: "arctic",   name: "Arctic",   dot1: "#7c3aed", dot2: "#6366f1" },
+  { id: "midnight", name: "Midnight", dot1: "#3b82f6", dot2: "#f59e0b" },
+];
 
 interface WeeklySummary {
   done: Task[];
@@ -13,6 +20,8 @@ interface WeeklySummary {
 
 interface AppState {
   view: View;
+  theme: Theme;
+  setTheme: (t: Theme) => void;
   goals: Goal[];
   tasks: Task[];
   inboxTasks: Task[];
@@ -49,6 +58,12 @@ interface AppState {
 
 export const useStore = create<AppState>((set, get) => ({
   view: "inbox",
+  theme: (localStorage.getItem("mycoach-theme") as Theme) ?? "cosmic",
+  setTheme: (t) => {
+    document.documentElement.setAttribute("data-theme", t);
+    localStorage.setItem("mycoach-theme", t);
+    set({ theme: t });
+  },
   goals: [],
   tasks: [],
   inboxTasks: [],

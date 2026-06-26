@@ -1,19 +1,17 @@
-import { useStore, type View } from "../store";
+import { useStore, THEMES, type View } from "../store";
 
 const NAV: { id: View; icon: string; label: string; section?: string }[] = [
-  { id: "inbox", icon: "📥", label: "Inbox", section: "Capture" },
-  { id: "daily", icon: "☀️", label: "Daily", section: "Plan" },
-  { id: "weekly", icon: "📅", label: "Weekly" },
-  { id: "goals", icon: "🎯", label: "Goals", section: "Track" },
-  { id: "habits", icon: "🔁", label: "Habits" },
+  { id: "inbox",   icon: "📥", label: "Inbox",   section: "Capture" },
+  { id: "daily",   icon: "☀️", label: "Daily",   section: "Plan" },
+  { id: "weekly",  icon: "📅", label: "Weekly" },
+  { id: "goals",   icon: "🎯", label: "Goals",   section: "Track" },
+  { id: "habits",  icon: "🔁", label: "Habits" },
 ];
 
-interface Props {
-  onQuickAdd: () => void;
-}
+interface Props { onQuickAdd: () => void; }
 
 export default function Sidebar({ onQuickAdd }: Props) {
-  const { view, setView } = useStore();
+  const { view, setView, theme, setTheme } = useStore();
 
   return (
     <aside className="sidebar">
@@ -21,6 +19,7 @@ export default function Sidebar({ onQuickAdd }: Props) {
         <h1>MyCoach</h1>
         <span>Personal Growth OS</span>
       </div>
+
       <nav className="sidebar-nav">
         {NAV.map((item) => (
           <div key={item.id}>
@@ -35,7 +34,19 @@ export default function Sidebar({ onQuickAdd }: Props) {
           </div>
         ))}
       </nav>
+
       <div className="sidebar-footer">
+        <div className="theme-picker">
+          {THEMES.map((t) => (
+            <button
+              key={t.id}
+              className={`theme-btn${theme === t.id ? " active" : ""}`}
+              onClick={() => setTheme(t.id)}
+              title={t.name}
+              style={{ background: `linear-gradient(135deg, ${t.dot1}, ${t.dot2})` }}
+            />
+          ))}
+        </div>
         <button className="quick-add-btn" onClick={onQuickAdd}>+ Quick Add</button>
       </div>
     </aside>
