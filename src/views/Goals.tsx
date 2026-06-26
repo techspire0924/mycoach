@@ -51,6 +51,7 @@ export default function Goals() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [addingTask, setAddingTask] = useState(false);
   const [addingGoal, setAddingGoal] = useState(false);
+  const [addingSubGoal, setAddingSubGoal] = useState(false);
 
   function goalProgress(goalId: string) {
     const all = tasks.filter((t) => t.parent_goal_id === goalId && !t.parent_task_id);
@@ -62,6 +63,7 @@ export default function Goals() {
     // Refresh detailGoal from store in case it was edited
     const currentGoal = goals.find((g) => g.id === detailGoal.id) ?? detailGoal;
     const goalTasks = tasks.filter((t) => t.parent_goal_id === currentGoal.id && !t.parent_task_id);
+    const subGoals = goals.filter((g) => g.parent_goal_id === currentGoal.id);
     const subtasksOf = (id: string) => tasks.filter((t) => t.parent_task_id === id);
     const { done, total, pct } = goalProgress(currentGoal.id);
 
@@ -80,6 +82,7 @@ export default function Goals() {
           </div>
           <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button className="btn btn-primary" style={{ fontSize: 13 }} onClick={() => setAddingTask(true)}>+ Add Task</button>
+            <button className="btn btn-ghost" style={{ fontSize: 13 }} onClick={() => setAddingSubGoal(true)}>+ Sub-Goal</button>
             <button className="btn btn-ghost" style={{ fontSize: 13 }} onClick={() => setEditingGoal(currentGoal)}>Edit Goal</button>
             {currentGoal.status !== "completed" && (
               <button className="btn btn-ghost" style={{ fontSize: 13 }} onClick={() => completeGoal(currentGoal.id).then(() => setDetailGoal(null))}>
@@ -92,10 +95,40 @@ export default function Goals() {
           </div>
         </div>
 
-        {goalTasks.length === 0 && (
+        {subGoals.length > 0 && (
+          <div className="subgoals-section">
+            <div className="section-label">Sub-Goals</div>
+            <div className="subgoals-list">
+              {subGoals.map((sg) => {
+                const sp = goalProgress(sg.id);
+                return (
+                  <div key={sg.id} className="subgoal-item" onClick={() => setDetailGoal(sg)}>
+                    <div className="subgoal-item-left">
+                      <div className={`goal-status-dot ${sg.status === "completed" ? "dot-completed" : "dot-active"}`} />
+                      <span className="subgoal-item-title">{sg.title}</span>
+                    </div>
+                    <div className="subgoal-item-right">
+                      <div className="subgoal-bar">
+                        <div className="subgoal-bar-fill" style={{ width: `${sp.pct}%` }} />
+                      </div>
+                      <span className="subgoal-pct">{sp.pct}%</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {goalTasks.length === 0 && subGoals.length === 0 && (
           <div className="empty-state">
             <div className="empty-state-icon">📋</div>
             <p>No tasks yet — add one above</p>
+          </div>
+        )}
+        {goalTasks.length === 0 && subGoals.length > 0 && (
+          <div className="empty-state" style={{ marginTop: 8 }}>
+            <p>No direct tasks — add one above</p>
           </div>
         )}
         {goalTasks.map((t) => (
@@ -110,6 +143,9 @@ export default function Goals() {
         )}
         {editingGoal && (
           <EditGoalModal goal={editingGoal} onClose={() => setEditingGoal(null)} />
+        )}
+        {addingSubGoal && (
+          <AddGoalModal onClose={() => setAddingSubGoal(false)} defaultParentId={currentGoal.id} />
         )}
       </>
     );

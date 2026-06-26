@@ -3,14 +3,15 @@ import { useStore } from "../store";
 
 interface Props {
   onClose: () => void;
+  defaultParentId?: string;
 }
 
-export default function AddGoalModal({ onClose }: Props) {
+export default function AddGoalModal({ onClose, defaultParentId }: Props) {
   const { addGoal, goals } = useStore();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [targetDate, setTargetDate] = useState("");
-  const [parentGoalId, setParentGoalId] = useState("");
+  const [parentGoalId, setParentGoalId] = useState(defaultParentId ?? "");
 
   async function handleSave() {
     if (!title.trim()) return;

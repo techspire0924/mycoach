@@ -1,5 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
+@font-face {
+  font-family: "TwemojiMozilla";
+  src: url("https://cdn.jsdelivr.net/gh/mozilla/twemoji-colr@0.7.0/TwemojiMozilla.woff2") format("woff2");
+  font-display: swap;
+  unicode-range: U+1F000-1FFFF, U+2600-27BF, U+231A-231B, U+23E9-23F3, U+23F8-23FA, U+25AA-25FE, U+2614-2615, U+2648-2653, U+267F, U+2693, U+26A1, U+26AA-26AB, U+26BD-26BE, U+26C4-26C5, U+26CE, U+26D4, U+26EA, U+26F2-26F3, U+26F5, U+26FA, U+26FD, U+2702, U+2705, U+2708-270D, U+270F, U+2712, U+2714, U+2716, U+271D, U+2721, U+2728, U+2733-2734, U+2744, U+2747, U+274C, U+274E, U+2753-2755, U+2757, U+2763-2764, U+2795-2797, U+27A1, U+27B0, U+27BF, U+2934-2935, U+2B05-2B07, U+2B1B-2B1C, U+2B50, U+2B55, U+3030, U+303D, U+3297, U+3299, U+FE0F;
+}
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body, #root { user-select: none; -webkit-user-select: none; }
 input, textarea, [contenteditable] { user-select: text; -webkit-user-select: text; }
@@ -218,7 +225,7 @@ img.twemoji {
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Inter', 'TwemojiMozilla', -apple-system, BlinkMacSystemFont, sans-serif;
   background: rgba(7,7,13,0.75);
   color: var(--text);
   height: 100vh;
@@ -1204,6 +1211,27 @@ input, textarea, select { font-family: inherit; }
   font-weight: 500;
   margin-top: 8px;
 }
+
+/* ── Sub-goals ── */
+.subgoals-section { margin-bottom: 20px; }
+.subgoals-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.section-label {
+  font-size: 11px; font-weight: 700; color: var(--text2);
+  text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px;
+}
+.subgoal-item {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 14px; cursor: pointer;
+  transition: background 0.12s;
+}
+.subgoal-item:hover { background: var(--surface-hover); }
+.subgoal-item-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+.subgoal-item-title { font-size: 14px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.subgoal-item-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.subgoal-bar { width: 80px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.subgoal-bar-fill { height: 100%; background: var(--grad); border-radius: 2px; transition: width 0.3s; }
+.subgoal-pct { font-size: 12px; color: var(--text2); font-weight: 600; width: 32px; text-align: right; }
 
 /* ── Calendar ── */
 .cal-container {

@@ -42,7 +42,7 @@ export default function App() {
   });
 
   return (
-    <div className="layout">
+    <div className="layout" data-tauri-drag-region>
       <Cursor />
       <Sidebar onQuickAdd={() => setQuickAdd(true)} />
       <main className="main">
