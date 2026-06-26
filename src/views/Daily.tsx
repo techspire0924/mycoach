@@ -7,42 +7,50 @@ import AddTaskModal from "../components/AddTaskModal";
 export default function Daily() {
   const { tasks, goals } = useStore();
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  // subtasksOf uses all tasks (including done) to show full progress
   const [addingToGoal, setAddingToGoal] = useState<string | undefined>(undefined);
+  const [showDone, setShowDone] = useState(false);
 
-  // Group tasks by goal — top-level open tasks only (subtasks rendered inline)
+  const subtasksOf = (id: string) => tasks.filter((t) => t.parent_task_id === id);
+  const goalMap = new Map(goals.map((g) => [g.id, g]));
+
+  const topLevel = tasks.filter((t) => !t.parent_task_id);
+  const openTasks = topLevel.filter((t) => t.status !== "done");
+  const doneTasks = topLevel.filter((t) => t.status === "done");
+
+  // Group open tasks by goal
   const tasksByGoal = new Map<string | null, Task[]>();
-  const topLevelTasks = tasks.filter((t) => !t.parent_task_id && t.status !== "done");
-
-  for (const task of topLevelTasks) {
+  for (const task of openTasks) {
     const key = task.parent_goal_id ?? null;
     if (!tasksByGoal.has(key)) tasksByGoal.set(key, []);
     tasksByGoal.get(key)!.push(task);
   }
 
-  const subtasksOf = (id: string) => tasks.filter((t) => t.parent_task_id === id);
-
-  function goalProgress(goalId: string): { done: number; total: number } {
-    const all = topLevelTasks.filter((t) => t.parent_goal_id === goalId);
-    return { done: all.filter((t) => t.status === "done").length, total: all.length };
-  }
-
-  const goalMap = new Map(goals.map((g) => [g.id, g]));
-
-  // Ordered: goals first (in goals order), then standalone
   const orderedGoalIds = goals.map((g) => g.id).filter((id) => tasksByGoal.has(id));
 
-  if (topLevelTasks.length === 0) {
+  function goalProgress(goalId: string) {
+    const all = tasks.filter((t) => t.parent_goal_id === goalId && !t.parent_task_id);
+    const done = all.filter((t) => t.status === "done").length;
+    return { done, total: all.length };
+  }
+
+  if (openTasks.length === 0 && doneTasks.length === 0) {
     return (
       <div className="empty-state">
         <div className="empty-state-icon">☀️</div>
-        <p>No open tasks — add some from Inbox or Quick Add</p>
+        <p>No tasks — add some from Inbox or Quick Add</p>
       </div>
     );
   }
 
   return (
     <>
+      {openTasks.length === 0 && doneTasks.length > 0 && (
+        <div className="empty-state">
+          <div className="empty-state-icon">🎉</div>
+          <p>All done for today!</p>
+        </div>
+      )}
+
       {orderedGoalIds.map((goalId) => {
         const goal = goalMap.get(goalId)!;
         const groupTasks = tasksByGoal.get(goalId) ?? [];
@@ -78,6 +86,20 @@ export default function Daily() {
             <span className="goal-group-label" style={{ color: "var(--text2)" }}>📋 Standalone</span>
           </div>
           {(tasksByGoal.get(null) ?? []).map((t) => (
+            <TaskItem key={t.id} task={t} subtasks={subtasksOf(t.id)} onEdit={setEditingTask} />
+          ))}
+        </div>
+      )}
+
+      {doneTasks.length > 0 && (
+        <div className="goal-group">
+          <div className="goal-group-header" style={{ cursor: "pointer" }} onClick={() => setShowDone((v) => !v)}>
+            <span className="goal-group-label" style={{ color: "var(--done)" }}>
+              {showDone ? "▼" : "▶"} ✓ Completed ({doneTasks.length})
+            </span>
+            <span style={{ fontSize: 12, color: "var(--text2)", marginLeft: "auto" }}>click to undo</span>
+          </div>
+          {showDone && doneTasks.map((t) => (
             <TaskItem key={t.id} task={t} subtasks={subtasksOf(t.id)} onEdit={setEditingTask} />
           ))}
         </div>

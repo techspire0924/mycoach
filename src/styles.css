@@ -1,8 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body, #root { user-select: none; }
-input, textarea, [contenteditable] { user-select: text; }
+body, #root { user-select: none; -webkit-user-select: none; }
+input, textarea, [contenteditable] { user-select: text; -webkit-user-select: text; }
 
 :root {
   --bg:            #07070d;
@@ -415,7 +415,7 @@ input, textarea, select { font-family: inherit; }
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.15);
+  border: 2px solid var(--text2);
   flex-shrink: 0;
   margin-top: 1px;
   cursor: pointer;
@@ -427,8 +427,11 @@ input, textarea, select { font-family: inherit; }
   font-size: 11px;
   font-weight: 700;
   position: relative;
+  opacity: 0.7;
 }
-.task-check:hover { border-color: rgba(124,58,237,0.6); background: rgba(124,58,237,0.1); }
+.task-check:hover { opacity: 1; }
+.task-check:hover { border-color: var(--accent); background: rgba(124,58,237,0.1); }
+.task-check.checked, .task-check.inprog { opacity: 1; }
 .task-check.inprog {
   border-color: var(--inprog);
   color: var(--inprog);
