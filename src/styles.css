@@ -292,8 +292,8 @@ input, textarea, select { font-family: inherit; }
 .sidebar {
   width: 230px;
   background: rgba(10,10,20,0.6);
-  backdrop-filter: blur(12px) saturate(140%);
-  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   border-right: 1px solid rgba(255,255,255,0.07);
   display: flex;
   flex-direction: column;
@@ -405,8 +405,8 @@ input, textarea, select { font-family: inherit; }
   justify-content: space-between;
   flex-shrink: 0;
   background: rgba(7,7,13,0.5);
-  backdrop-filter: blur(12px) saturate(140%);
-  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 .topbar h2 { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
 .topbar-date { color: var(--text2); font-size: 12px; font-weight: 400; }
@@ -414,8 +414,8 @@ input, textarea, select { font-family: inherit; }
 /* ── Task item ── */
 .task-item {
   background: rgba(255,255,255,0.04);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 13px 16px;
@@ -591,8 +591,8 @@ input, textarea, select { font-family: inherit; }
 .goals-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
 .goal-card {
   background: rgba(255,255,255,0.04);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   padding: 20px;
@@ -704,8 +704,8 @@ input, textarea, select { font-family: inherit; }
 
 .inbox-item {
   background: rgba(255,255,255,0.04);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 13px 16px;
@@ -753,8 +753,8 @@ input, textarea, select { font-family: inherit; }
 .week-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
 .week-stat {
   background: rgba(255,255,255,0.04);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 18px 20px;
@@ -801,8 +801,8 @@ input, textarea, select { font-family: inherit; }
 .habits-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
 .habit-card {
   background: rgba(255,255,255,0.04);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 16px;
@@ -893,7 +893,7 @@ input, textarea, select { font-family: inherit; }
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.7);
-  backdrop-filter: blur(3px);
+  backdrop-filter: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -902,8 +902,8 @@ input, textarea, select { font-family: inherit; }
 }
 .modal {
   background: rgba(14,14,24,0.75);
-  backdrop-filter: blur(16px) saturate(140%);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: var(--radius-xl);
   padding: 26px;
