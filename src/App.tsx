@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useStore } from "./store";
 import Sidebar from "./components/Sidebar";
+import Cursor from "./components/Cursor";
 import QuickAddModal from "./components/QuickAddModal";
 import Inbox from "./views/Inbox";
 import Daily from "./views/Daily";
@@ -28,6 +29,7 @@ export default function App() {
 
   return (
     <div className="layout">
+      <Cursor />
       <Sidebar onQuickAdd={() => setQuickAdd(true)} />
       <main className="main">
         <div className="topbar" data-tauri-drag-region>
