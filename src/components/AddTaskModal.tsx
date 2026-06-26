@@ -16,6 +16,7 @@ export default function AddTaskModal({ onClose, editTask, defaultGoalId, default
   const [title, setTitle] = useState(editTask?.title ?? "");
   const [goalId, setGoalId] = useState(editTask?.parent_goal_id ?? defaultGoalId ?? "");
   const [taskType, setTaskType] = useState<TaskType>(editTask?.task_type ?? "onetime");
+  const [hasDeadline, setHasDeadline] = useState(!!(editTask?.due_date));
   const [dueDate, setDueDate] = useState(editTask?.due_date ?? "");
   const [isUrgent, setIsUrgent] = useState(editTask ? editTask.is_urgent === 1 : false);
   const [recurType, setRecurType] = useState<RecurrenceType>(editTask?.recurrence_type ?? "daily");
@@ -31,6 +32,7 @@ export default function AddTaskModal({ onClose, editTask, defaultGoalId, default
       setTitle(editTask.title);
       setGoalId(editTask.parent_goal_id ?? "");
       setTaskType(editTask.task_type ?? "onetime");
+      setHasDeadline(!!(editTask.due_date));
       setDueDate(editTask.due_date ?? "");
       setIsUrgent(editTask.is_urgent === 1);
       setRecurType(editTask.recurrence_type ?? "daily");
@@ -50,7 +52,7 @@ export default function AddTaskModal({ onClose, editTask, defaultGoalId, default
     const isRecurring = taskType === "recurring";
     const data = {
       title: title.trim(),
-      due_date: !isRecurring && dueDate ? dueDate : undefined,
+      due_date: !isRecurring && hasDeadline && dueDate ? dueDate : undefined,
       is_urgent: isUrgent,
       parent_goal_id: goalId || undefined,
       task_type: taskType,
@@ -103,12 +105,31 @@ export default function AddTaskModal({ onClose, editTask, defaultGoalId, default
             </div>
 
             {taskType === "onetime" && (
-              <input
-                className="modal-input"
-                type="date"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-              />
+              <div className="deadline-row">
+                <div className="task-type-toggle" style={{ marginBottom: 0 }}>
+                  <button
+                    className={`type-btn${!hasDeadline ? " active" : ""}`}
+                    onClick={() => setHasDeadline(false)}
+                  >
+                    No deadline
+                  </button>
+                  <button
+                    className={`type-btn${hasDeadline ? " active" : ""}`}
+                    onClick={() => setHasDeadline(true)}
+                  >
+                    With deadline
+                  </button>
+                </div>
+                {hasDeadline && (
+                  <input
+                    className="modal-input"
+                    type="date"
+                    value={dueDate}
+                    onChange={(e) => setDueDate(e.target.value)}
+                    style={{ marginBottom: 0 }}
+                  />
+                )}
+              </div>
             )}
 
             {taskType === "recurring" && (

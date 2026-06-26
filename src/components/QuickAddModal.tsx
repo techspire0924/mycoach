@@ -15,6 +15,7 @@ export default function QuickAddModal({ onClose }: Props) {
   const [taskTitle, setTaskTitle] = useState("");
   const [taskGoalId, setTaskGoalId] = useState("");
   const [taskType, setTaskType] = useState<TaskType>("onetime");
+  const [hasDeadline, setHasDeadline] = useState(false);
   const [taskDue, setTaskDue] = useState("");
   const [taskUrgent, setTaskUrgent] = useState(false);
   // Recurrence
@@ -40,7 +41,7 @@ export default function QuickAddModal({ onClose }: Props) {
       const isRecurring = taskType === "recurring";
       await addTask({
         title: taskTitle.trim(),
-        due_date: !isRecurring && taskDue ? taskDue : undefined,
+        due_date: !isRecurring && hasDeadline && taskDue ? taskDue : undefined,
         is_urgent: taskUrgent,
         parent_goal_id: taskGoalId || undefined,
         task_type: taskType,
@@ -106,13 +107,31 @@ export default function QuickAddModal({ onClose }: Props) {
             </div>
 
             {taskType === "onetime" && (
-              <input
-                className="modal-input"
-                type="date"
-                value={taskDue}
-                onChange={(e) => setTaskDue(e.target.value)}
-                placeholder="Due date (optional)"
-              />
+              <div className="deadline-row">
+                <div className="task-type-toggle" style={{ marginBottom: 0 }}>
+                  <button
+                    className={`type-btn${!hasDeadline ? " active" : ""}`}
+                    onClick={() => setHasDeadline(false)}
+                  >
+                    No deadline
+                  </button>
+                  <button
+                    className={`type-btn${hasDeadline ? " active" : ""}`}
+                    onClick={() => setHasDeadline(true)}
+                  >
+                    With deadline
+                  </button>
+                </div>
+                {hasDeadline && (
+                  <input
+                    className="modal-input"
+                    type="date"
+                    value={taskDue}
+                    onChange={(e) => setTaskDue(e.target.value)}
+                    style={{ marginBottom: 0 }}
+                  />
+                )}
+              </div>
             )}
 
             {taskType === "recurring" && (

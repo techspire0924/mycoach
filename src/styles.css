@@ -1212,6 +1212,8 @@ input, textarea, select { font-family: inherit; }
   margin-top: 8px;
 }
 
+.deadline-row { display: flex; flex-direction: column; gap: 10px; }
+
 /* ── Sub-goals ── */
 .subgoals-section { margin-bottom: 20px; }
 .subgoals-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
