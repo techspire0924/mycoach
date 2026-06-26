@@ -8,6 +8,7 @@ interface Props {
   subtasks?: Task[];
   onEdit?: (task: Task) => void;
   completedToday?: boolean;
+  overdue?: boolean;
 }
 
 const STATUS_CYCLE: Record<string, { next: string; icon: string; cls: string; title: string }> = {
@@ -28,7 +29,7 @@ function recurrenceLabel(task: Task): string {
   return "↻";
 }
 
-export default function TaskItem({ task, subtasks = [], onEdit, completedToday }: Props) {
+export default function TaskItem({ task, subtasks = [], onEdit, completedToday, overdue }: Props) {
   const { cycleTaskStatus, toggleRecurring, removeTask } = useStore();
   const [expanded, setExpanded] = useState(false);
   const [addingSubtask, setAddingSubtask] = useState(false);
@@ -51,7 +52,7 @@ export default function TaskItem({ task, subtasks = [], onEdit, completedToday }
 
   return (
     <>
-      <div className={`task-item${isDone ? " done" : ""}`}>
+      <div className={`task-item${isDone ? " done" : ""}${overdue ? " overdue" : ""}`}>
         <button
           className={`task-check${s.cls ? ` ${s.cls}` : ""}`}
           onClick={handleCheck}

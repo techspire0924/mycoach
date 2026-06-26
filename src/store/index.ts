@@ -8,7 +8,7 @@ import {
 } from "../db/tasks";
 import { getHabits, createHabit, deleteHabit, getHabitLogs, toggleHabitLog } from "../db/habits";
 
-export type View = "inbox" | "daily" | "weekly" | "goals" | "habits" | "calendar";
+export type View = "inbox" | "today" | "tasks" | "weekly" | "goals" | "habits" | "calendar";
 export type Theme = "cosmic" | "arctic" | "midnight";
 
 export const THEMES: { id: Theme; name: string; dot1: string; dot2: string }[] = [
@@ -96,7 +96,11 @@ export const useStore = create<AppState>((set, get) => ({
   setView: async (v) => {
     set({ view: v });
     if (v === "weekly") await get().loadWeekly();
-    if (v === "daily") { await get().loadTasks(); await get().loadTodayCompletions(); }
+    if (v === "tasks") { await get().loadTasks(); await get().loadTodayCompletions(); }
+    if (v === "today") {
+      await Promise.all([get().loadTasks(), get().loadTodayCompletions(), get().loadHabits()]);
+      await Promise.all(get().habits.map(h => get().loadHabitLogs(h.id)));
+    }
     if (v === "inbox") await Promise.all([get().loadTasks(), get().loadInbox()]);
   },
 

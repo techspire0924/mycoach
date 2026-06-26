@@ -2,9 +2,10 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useStore, THEMES, type View } from "../store";
 
 const NAV: { id: View; icon: string; label: string; section?: string }[] = [
-  { id: "inbox",   icon: "📥", label: "Inbox",   section: "Capture" },
-  { id: "daily",   icon: "☀️", label: "Daily",   section: "Plan" },
-  { id: "weekly",  icon: "📅", label: "Weekly" },
+  { id: "inbox",    icon: "📥", label: "Inbox",    section: "Capture" },
+  { id: "today",    icon: "☀️", label: "Today",    section: "Plan" },
+  { id: "tasks",    icon: "✅", label: "Tasks" },
+  { id: "weekly",   icon: "📅", label: "Weekly" },
   { id: "goals",    icon: "🎯", label: "Goals",    section: "Track" },
   { id: "habits",   icon: "🔁", label: "Habits" },
   { id: "calendar", icon: "📆", label: "Calendar", section: "Review" },

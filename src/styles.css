@@ -1214,6 +1214,93 @@ input, textarea, select { font-family: inherit; }
 
 .deadline-row { display: flex; flex-direction: column; gap: 10px; }
 
+/* ── Today view ── */
+.today-section { margin-bottom: 24px; }
+
+.today-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.today-section-header--overdue { border-bottom-color: rgba(239,68,68,0.3); }
+
+.today-section-icon { font-size: 16px; line-height: 1; }
+.today-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  flex: 1;
+}
+.today-section-header--overdue .today-section-title { color: var(--urgent); }
+.today-section-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 1px 7px;
+  border-radius: 20px;
+}
+.today-section-header--overdue .today-section-count {
+  background: var(--urgent-bg);
+  border-color: rgba(239,68,68,0.25);
+  color: var(--urgent);
+}
+
+/* Overdue task highlight */
+.task-item.overdue {
+  border-color: rgba(239,68,68,0.35);
+  background: rgba(239,68,68,0.05);
+}
+.task-item.overdue:hover { border-color: rgba(239,68,68,0.55); }
+
+/* Today habits */
+.today-habits { display: flex; flex-direction: column; gap: 6px; }
+.today-habit-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.today-habit-row:hover { background: var(--surface-hover); }
+.today-habit-row--done { opacity: 0.6; }
+
+.today-habit-check {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--border-hover);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: var(--done);
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.today-habit-check.checked {
+  background: var(--done);
+  border-color: var(--done);
+  color: #fff;
+}
+.today-habit-name { flex: 1; font-size: 14px; color: var(--text); }
+.today-habit-name.done { text-decoration: line-through; color: var(--text2); }
+.today-habit-freq {
+  font-size: 11px;
+  color: var(--text2);
+  text-transform: capitalize;
+}
+
 /* ── Sub-goals ── */
 .subgoals-section { margin-bottom: 20px; }
 .subgoals-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }

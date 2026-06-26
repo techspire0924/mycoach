@@ -6,7 +6,8 @@ import Sidebar from "./components/Sidebar";
 import Cursor from "./components/Cursor";
 import QuickAddModal from "./components/QuickAddModal";
 import Inbox from "./views/Inbox";
-import Daily from "./views/Daily";
+import Tasks from "./views/Daily";
+import Today from "./views/Today";
 import Weekly from "./views/Weekly";
 import Goals from "./views/Goals";
 import Habits from "./views/Habits";
@@ -14,7 +15,8 @@ import Calendar from "./views/Calendar";
 
 const VIEW_TITLES: Record<string, string> = {
   inbox: "Inbox",
-  daily: "Daily Plan",
+  today: "Today",
+  tasks: "Tasks",
   weekly: "Weekly Review",
   goals: "Goals",
   habits: "Habits",
@@ -74,7 +76,8 @@ export default function App() {
           ) : (
             <>
               {view === "inbox" && <Inbox />}
-              {view === "daily" && <Daily />}
+              {view === "today" && <Today />}
+              {view === "tasks" && <Tasks />}
               {view === "weekly" && <Weekly />}
               {view === "goals" && <Goals />}
               {view === "habits" && <Habits />}
