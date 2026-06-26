@@ -1,6 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body, #root { user-select: none; }
+input, textarea, [contenteditable] { user-select: text; }
 
 :root {
   --bg:            #07070d;
@@ -256,21 +258,6 @@ input, textarea, select { font-family: inherit; }
 }
 
 .sidebar-logo { padding: 12px 18px 14px; cursor: default; }
-.sidebar-titlebar {
-  height: 38px;
-  display: flex;
-  align-items: center;
-  padding: 0 14px;
-  -webkit-app-region: drag;
-  user-select: none;
-  flex-shrink: 0;
-}
-.sidebar-titlebar-controls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  -webkit-app-region: no-drag;
-}
 .sidebar-logo h1 {
   font-size: 17px;
   font-weight: 700;
@@ -344,15 +331,12 @@ input, textarea, select { font-family: inherit; }
   display: flex;
   align-items: center;
   padding: 0 14px;
-  -webkit-app-region: drag;
-  user-select: none;
   flex-shrink: 0;
 }
 .sidebar-titlebar-controls {
   display: flex;
   align-items: center;
   gap: 8px;
-  -webkit-app-region: no-drag;
 }
 .titlebar-btn {
   width: 12px;
@@ -379,10 +363,7 @@ input, textarea, select { font-family: inherit; }
   flex-shrink: 0;
   background: rgba(7,7,13,0.6);
   backdrop-filter: blur(10px);
-  -webkit-app-region: drag;
-  user-select: none;
 }
-.topbar h2, .topbar span { -webkit-app-region: no-drag; }
 .topbar h2 { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
 .topbar-date { color: var(--text2); font-size: 12px; font-weight: 400; }
 
