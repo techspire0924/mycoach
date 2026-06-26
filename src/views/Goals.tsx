@@ -1,13 +1,54 @@
 import { useState } from "react";
 import { useStore } from "../store";
-import type { Goal } from "../db/types";
+import type { Goal, Task } from "../db/types";
 import TaskItem from "../components/TaskItem";
 import AddTaskModal from "../components/AddTaskModal";
 import AddGoalModal from "../components/AddGoalModal";
 
+function EditGoalModal({ goal, onClose }: { goal: Goal; onClose: () => void }) {
+  const { editGoal } = useStore();
+  const [title, setTitle] = useState(goal.title);
+  const [description, setDescription] = useState(goal.description ?? "");
+  const [targetDate, setTargetDate] = useState(goal.target_date ?? "");
+
+  async function handleSave() {
+    if (!title.trim()) return;
+    await editGoal(goal.id, {
+      title: title.trim(),
+      description: description.trim() || undefined,
+      target_date: targetDate || undefined,
+    });
+    onClose();
+  }
+
+  return (
+    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="modal">
+        <h3>Edit Goal</h3>
+        <input className="modal-input" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
+        <textarea
+          className="modal-input"
+          placeholder="Description (optional)..."
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={2}
+          style={{ resize: "vertical" }}
+        />
+        <input className="modal-input" type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} />
+        <div className="modal-actions">
+          <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" onClick={handleSave}>Save</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Goals() {
   const { goals, tasks, removeGoal, completeGoal } = useStore();
   const [detailGoal, setDetailGoal] = useState<Goal | null>(null);
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [addingTask, setAddingTask] = useState(false);
   const [addingGoal, setAddingGoal] = useState(false);
 
@@ -18,31 +59,34 @@ export default function Goals() {
   }
 
   if (detailGoal) {
-    const goalTasks = tasks.filter((t) => t.parent_goal_id === detailGoal.id && !t.parent_task_id);
+    // Refresh detailGoal from store in case it was edited
+    const currentGoal = goals.find((g) => g.id === detailGoal.id) ?? detailGoal;
+    const goalTasks = tasks.filter((t) => t.parent_goal_id === currentGoal.id && !t.parent_task_id);
     const subtasksOf = (id: string) => tasks.filter((t) => t.parent_task_id === id);
-    const { done, total, pct } = goalProgress(detailGoal.id);
+    const { done, total, pct } = goalProgress(currentGoal.id);
 
     return (
       <>
         <button className="back-btn" onClick={() => setDetailGoal(null)}>← Back to Goals</button>
         <div className="goal-detail-header">
-          <div className="goal-detail-title">{detailGoal.title}</div>
-          {detailGoal.description && <div className="goal-detail-desc">{detailGoal.description}</div>}
+          <div className="goal-detail-title">{currentGoal.title}</div>
+          {currentGoal.description && <div className="goal-detail-desc">{currentGoal.description}</div>}
           <div className="goal-detail-meta">
-            {detailGoal.target_date && (
-              <span>Target: <strong>{new Date(detailGoal.target_date + "T00:00:00").toLocaleDateString("en-US", { month: "long", year: "numeric" })}</strong></span>
+            {currentGoal.target_date && (
+              <span>Target: <strong>{new Date(currentGoal.target_date + "T00:00:00").toLocaleDateString("en-US", { month: "long", year: "numeric" })}</strong></span>
             )}
             <span>Progress: <strong>{pct}%</strong></span>
             <span>Tasks: <strong>{done}/{total} done</strong></span>
           </div>
-          <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
+          <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button className="btn btn-primary" style={{ fontSize: 13 }} onClick={() => setAddingTask(true)}>+ Add Task</button>
-            {detailGoal.status !== "completed" && (
-              <button className="btn btn-ghost" style={{ fontSize: 13 }} onClick={() => completeGoal(detailGoal.id).then(() => setDetailGoal(null))}>
+            <button className="btn btn-ghost" style={{ fontSize: 13 }} onClick={() => setEditingGoal(currentGoal)}>Edit Goal</button>
+            {currentGoal.status !== "completed" && (
+              <button className="btn btn-ghost" style={{ fontSize: 13 }} onClick={() => completeGoal(currentGoal.id).then(() => setDetailGoal(null))}>
                 Mark Complete
               </button>
             )}
-            <button className="btn btn-danger" style={{ fontSize: 13 }} onClick={() => removeGoal(detailGoal.id).then(() => setDetailGoal(null))}>
+            <button className="btn btn-danger" style={{ fontSize: 13 }} onClick={() => removeGoal(currentGoal.id).then(() => setDetailGoal(null))}>
               Delete Goal
             </button>
           </div>
@@ -55,14 +99,17 @@ export default function Goals() {
           </div>
         )}
         {goalTasks.map((t) => (
-          <TaskItem key={t.id} task={t} subtasks={subtasksOf(t.id)} />
+          <TaskItem key={t.id} task={t} subtasks={subtasksOf(t.id)} onEdit={setEditingTask} />
         ))}
 
         {addingTask && (
-          <AddTaskModal
-            onClose={() => setAddingTask(false)}
-            defaultGoalId={detailGoal.id}
-          />
+          <AddTaskModal onClose={() => setAddingTask(false)} defaultGoalId={currentGoal.id} />
+        )}
+        {editingTask && (
+          <AddTaskModal onClose={() => setEditingTask(null)} editTask={editingTask} />
+        )}
+        {editingGoal && (
+          <EditGoalModal goal={editingGoal} onClose={() => setEditingGoal(null)} />
         )}
       </>
     );

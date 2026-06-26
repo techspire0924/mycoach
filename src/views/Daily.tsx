@@ -7,14 +7,12 @@ import AddTaskModal from "../components/AddTaskModal";
 export default function Daily() {
   const { tasks, goals } = useStore();
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  // subtasksOf uses all tasks (including done) to show full progress
   const [addingToGoal, setAddingToGoal] = useState<string | undefined>(undefined);
 
-  // Group tasks by goal
+  // Group tasks by goal — top-level open tasks only (subtasks rendered inline)
   const tasksByGoal = new Map<string | null, Task[]>();
-  const subtaskIds = new Set(tasks.filter((t) => t.parent_task_id).map((t) => t.id));
-
-  // Only top-level tasks (no parent_task_id)
-  const topLevelTasks = tasks.filter((t) => !t.parent_task_id);
+  const topLevelTasks = tasks.filter((t) => !t.parent_task_id && t.status !== "done");
 
   for (const task of topLevelTasks) {
     const key = task.parent_goal_id ?? null;
@@ -34,7 +32,7 @@ export default function Daily() {
   // Ordered: goals first (in goals order), then standalone
   const orderedGoalIds = goals.map((g) => g.id).filter((id) => tasksByGoal.has(id));
 
-  if (tasks.length === 0) {
+  if (topLevelTasks.length === 0) {
     return (
       <div className="empty-state">
         <div className="empty-state-icon">☀️</div>

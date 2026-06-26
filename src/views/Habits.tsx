@@ -25,7 +25,7 @@ export default function Habits() {
 
   useEffect(() => {
     habits.forEach((h) => loadHabitLogs(h.id));
-  }, [habits]);
+  }, [habits, loadHabitLogs]);
 
   function isLogged(habitId: string, date: string): boolean {
     const logs = habitLogs[habitId] ?? [];

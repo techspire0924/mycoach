@@ -18,10 +18,10 @@ export async function getTasks(filter?: { parent_goal_id?: string; parent_task_i
   return db.select<Task[]>("SELECT * FROM tasks ORDER BY is_urgent DESC, due_date, position, created_at");
 }
 
-export async function getAllOpenTasks(): Promise<Task[]> {
+export async function getAllTasks(): Promise<Task[]> {
   const db = await getDb();
   return db.select<Task[]>(
-    "SELECT * FROM tasks WHERE status != 'done' ORDER BY is_urgent DESC, due_date, position, created_at"
+    "SELECT * FROM tasks ORDER BY is_urgent DESC, due_date, position, created_at"
   );
 }
 

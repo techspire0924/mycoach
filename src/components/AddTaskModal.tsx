@@ -6,14 +6,17 @@ interface Props {
   onClose: () => void;
   editTask?: Task | null;
   defaultGoalId?: string;
+  defaultParentTaskId?: string;
 }
 
-export default function AddTaskModal({ onClose, editTask, defaultGoalId }: Props) {
-  const { goals, addTask, editTask: updateTask } = useStore();
+export default function AddTaskModal({ onClose, editTask, defaultGoalId, defaultParentTaskId }: Props) {
+  const { goals, tasks, addTask, editTask: updateTask } = useStore();
   const [title, setTitle] = useState(editTask?.title ?? "");
   const [dueDate, setDueDate] = useState(editTask?.due_date ?? "");
   const [isUrgent, setIsUrgent] = useState(editTask ? editTask.is_urgent === 1 : false);
   const [goalId, setGoalId] = useState(editTask?.parent_goal_id ?? defaultGoalId ?? "");
+
+  const parentTask = defaultParentTaskId ? tasks.find((t) => t.id === defaultParentTaskId) : null;
 
   useEffect(() => {
     if (editTask) {
@@ -39,6 +42,7 @@ export default function AddTaskModal({ onClose, editTask, defaultGoalId }: Props
         due_date: dueDate || undefined,
         is_urgent: isUrgent,
         parent_goal_id: goalId || undefined,
+        parent_task_id: defaultParentTaskId,
       });
     }
     onClose();
@@ -47,21 +51,28 @@ export default function AddTaskModal({ onClose, editTask, defaultGoalId }: Props
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal">
-        <h3>{editTask ? "Edit Task" : "Add Task"}</h3>
+        <h3>{editTask ? "Edit Task" : defaultParentTaskId ? "Add Subtask" : "Add Task"}</h3>
+        {parentTask && (
+          <p style={{ color: "var(--text2)", fontSize: 12, marginBottom: 10 }}>
+            Subtask of: <strong style={{ color: "var(--text)" }}>{parentTask.title}</strong>
+          </p>
+        )}
         <input
           className="modal-input"
-          placeholder="Task title..."
+          placeholder={defaultParentTaskId ? "Subtask title..." : "Task title..."}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSave()}
           autoFocus
         />
-        <select className="modal-select" value={goalId} onChange={(e) => setGoalId(e.target.value)}>
-          <option value="">No goal (standalone)</option>
-          {goals.filter((g) => g.status !== "completed").map((g) => (
-            <option key={g.id} value={g.id}>{g.title}</option>
-          ))}
-        </select>
+        {!defaultParentTaskId && (
+          <select className="modal-select" value={goalId} onChange={(e) => setGoalId(e.target.value)}>
+            <option value="">No goal (standalone)</option>
+            {goals.filter((g) => g.status !== "completed").map((g) => (
+              <option key={g.id} value={g.id}>{g.title}</option>
+            ))}
+          </select>
+        )}
         <div className="modal-row">
           <input
             className="modal-input"

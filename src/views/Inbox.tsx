@@ -20,12 +20,11 @@ export default function Inbox() {
     inputRef.current?.focus();
   }
 
-  async function handleTriageTo(task: Task, type: "goal" | "task" | "delete", goalId?: string) {
+  async function handleTriageTo(task: Task, type: "goal" | "delete", goalId?: string) {
     if (type === "delete") {
       await removeTask(task.id);
-    } else if (type === "goal") {
-      // handled via goal assignment in triage
-      if (goalId) await triageTask(task.id, goalId);
+    } else if (type === "goal" && goalId) {
+      await triageTask(task.id, goalId);
     }
     setTriage(null);
     await loadInbox();
@@ -67,6 +66,9 @@ export default function Inbox() {
             <h3 style={{ marginBottom: 4 }}>Triage</h3>
             <p style={{ color: "var(--accent)", fontSize: 14, marginBottom: 16 }}>{triage.task.title}</p>
             <div className="triage-opts">
+              {goals.filter((g) => g.status !== "completed").length === 0 && (
+                <p style={{ color: "var(--text2)", fontSize: 13, marginBottom: 8 }}>No goals yet — create one in Goals first.</p>
+              )}
               {goals.filter((g) => g.status !== "completed").map((g) => (
                 <button
                   key={g.id}
@@ -77,10 +79,6 @@ export default function Inbox() {
                   <span>Assign to this goal</span>
                 </button>
               ))}
-              <button className="triage-opt" onClick={() => { setTriage(null); }}>
-                📋 Keep as standalone task
-                <span>Stays in Daily — no parent goal</span>
-              </button>
               <button className="triage-opt danger" onClick={() => handleTriageTo(triage.task, "delete")}>
                 🗑 Delete
                 <span>Remove from inbox</span>

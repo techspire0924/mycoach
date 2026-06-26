@@ -70,6 +70,8 @@ input, textarea, select { font-family: inherit; }
 .task-check { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0; margin-top: 1px; cursor: pointer; display: flex; align-items: center; justify-content: center; background: none; transition: all 0.15s; }
 .task-check:hover { border-color: var(--accent); }
 .task-check.checked { background: var(--done); border-color: var(--done); }
+.task-check.inprog { border-color: var(--inprogress); color: var(--inprogress); }
+.subtask-check.inprog { border-color: var(--inprogress); color: var(--inprogress); }
 .task-body { flex: 1; min-width: 0; }
 .task-title { font-size: 14px; line-height: 1.4; word-break: break-word; }
 .task-meta { display: flex; align-items: center; gap: 6px; margin-top: 5px; flex-wrap: wrap; }
