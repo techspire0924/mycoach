@@ -289,8 +289,10 @@ input, textarea, select { font-family: inherit; }
 
 /* ── Layout ── */
 .layout { display: flex; height: 100vh; width: 100%; }
-.main   { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+.main   { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; background: rgba(7,7,13,0.55); }
 .content { flex: 1; overflow-y: auto; padding: 28px 32px; animation: fadeIn 0.2s ease; }
+[data-theme="arctic"] .main   { background: rgba(235,235,248,0.60); }
+[data-theme="midnight"] .main { background: rgba(6,13,26,0.55); }
 
 /* ── Sidebar ── */
 .sidebar {
