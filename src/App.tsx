@@ -31,6 +31,7 @@ export default function App() {
     loadAll();
     const win = getCurrentWindow();
     win.clearEffects().catch(() => {});
+    win.setCursorVisible(false).catch(() => {});
 
     const INTERACTIVE =
       'button, a, input, select, textarea, [contenteditable], ' +

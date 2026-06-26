@@ -10,6 +10,7 @@
     "core:window:allow-toggle-maximize",
     "core:window:allow-start-dragging",
     "core:window:allow-set-effects",
+    "core:window:allow-set-cursor-visible",
     "opener:default",
     "sql:default",
     "sql:allow-execute",
