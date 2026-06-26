@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getCurrentWindow, Effect, EffectState } from "@tauri-apps/api/window";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useStore } from "./store";
 import Sidebar from "./components/Sidebar";
 import Cursor from "./components/Cursor";
@@ -24,10 +24,7 @@ export default function App() {
 
   useEffect(() => {
     loadAll();
-    getCurrentWindow().setEffects({
-      effects: [Effect.HudWindow],
-      state: EffectState.Active,
-    }).catch(() => {});
+    getCurrentWindow().clearEffects().catch(() => {});
   }, []);
 
   const today = new Date().toLocaleDateString("en-US", {
