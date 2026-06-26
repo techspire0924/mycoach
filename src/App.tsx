@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useStore } from "./store";
 import Sidebar from "./components/Sidebar";
-import AddTaskModal from "./components/AddTaskModal";
+import QuickAddModal from "./components/QuickAddModal";
 import Inbox from "./views/Inbox";
 import Daily from "./views/Daily";
 import Weekly from "./views/Weekly";
@@ -53,7 +53,7 @@ export default function App() {
           )}
         </div>
       </main>
-      {quickAdd && <AddTaskModal onClose={() => setQuickAdd(false)} />}
+      {quickAdd && <QuickAddModal onClose={() => setQuickAdd(false)} />}
     </div>
   );
 }

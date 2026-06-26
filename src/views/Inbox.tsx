@@ -45,15 +45,26 @@ export default function Inbox() {
         <button className="btn btn-primary" style={{ padding: "6px 14px", fontSize: 13 }} onClick={handleAdd}>Add</button>
       </div>
 
+      {inboxTasks.length > 0 && (
+        <div style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontSize: 12, color: "var(--text2)" }}>
+            {inboxTasks.length} item{inboxTasks.length !== 1 ? "s" : ""} to process
+          </span>
+          <span style={{ fontSize: 12, color: "var(--text2)" }}>Triage → assign to goal or delete</span>
+        </div>
+      )}
+
       {inboxTasks.length === 0 && (
         <div className="empty-state">
-          <div className="empty-state-icon">📥</div>
-          <p>Inbox empty — capture something above</p>
+          <div className="empty-state-icon">✨</div>
+          <p>Inbox clear — nothing to process</p>
+          <p style={{ fontSize: 12, marginTop: 4 }}>Capture thoughts above, then triage them into goals</p>
         </div>
       )}
 
       {inboxTasks.map((task) => (
         <div key={task.id} className="inbox-item">
+          <div className="inbox-item-dot" />
           <span className="inbox-item-text">{task.title}</span>
           <button className="triage-btn" onClick={() => setTriage({ task })}>Triage →</button>
           <button className="delete-inbox-btn" onClick={() => removeTask(task.id)}>✕</button>
