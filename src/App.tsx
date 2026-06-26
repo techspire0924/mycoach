@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { getCurrentWindow, Effect, EffectState } from "@tauri-apps/api/window";
 import { useStore } from "./store";
 import Sidebar from "./components/Sidebar";
 import Cursor from "./components/Cursor";
@@ -21,7 +22,13 @@ export default function App() {
   const { view, loadAll, loading } = useStore();
   const [quickAdd, setQuickAdd] = useState(false);
 
-  useEffect(() => { loadAll(); }, []);
+  useEffect(() => {
+    loadAll();
+    getCurrentWindow().setEffects({
+      effects: [Effect.UnderWindowBackground],
+      state: EffectState.Active,
+    }).catch(() => {});
+  }, []);
 
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long", month: "long", day: "numeric", year: "numeric",
