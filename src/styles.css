@@ -89,7 +89,7 @@ input, textarea, [contenteditable] { user-select: text; -webkit-user-select: tex
   --inprog:        #d97706;
   --inprog-bg:     rgba(217,119,6,0.1);
 }
-[data-theme="arctic"] body { background: rgba(235,235,248,0.82); }
+[data-theme="arctic"] body { background: rgba(235,235,248,0.20); }
 [data-theme="arctic"] body::before {
   background: radial-gradient(circle, rgba(124,58,237,0.05) 0%, transparent 70%);
 }
@@ -163,7 +163,7 @@ input, textarea, [contenteditable] { user-select: text; -webkit-user-select: tex
   --inprog:        #fbbf24;
   --inprog-bg:     rgba(251,191,36,0.12);
 }
-[data-theme="midnight"] body { background: rgba(6,13,26,0.82); }
+[data-theme="midnight"] body { background: rgba(6,13,26,0.15); }
 [data-theme="midnight"] body::before {
   background: radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%);
 }
@@ -215,7 +215,7 @@ input, textarea, [contenteditable] { user-select: text; -webkit-user-select: tex
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: rgba(7,7,13,0.82);
+  background: rgba(7,7,13,0.15);
   color: var(--text);
   height: 100vh;
   overflow: hidden;

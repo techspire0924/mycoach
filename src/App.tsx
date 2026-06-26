@@ -25,7 +25,7 @@ export default function App() {
   useEffect(() => {
     loadAll();
     getCurrentWindow().setEffects({
-      effects: [Effect.UnderWindowBackground],
+      effects: [Effect.HudWindow],
       state: EffectState.Active,
     }).catch(() => {});
   }, []);
