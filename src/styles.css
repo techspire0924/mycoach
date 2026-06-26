@@ -71,7 +71,7 @@
   border-right: 1px solid rgba(100,100,160,0.12);
 }
 [data-theme="arctic"] .topbar {
-  background: rgba(242,242,250,0.85);
+  background: rgba(242,242,250,0.88);
   border-bottom: 1px solid rgba(100,100,160,0.1);
 }
 [data-theme="arctic"] .task-item,
@@ -255,7 +255,22 @@ input, textarea, select { font-family: inherit; }
   flex-shrink: 0;
 }
 
-.sidebar-logo { padding: 22px 18px 14px; }
+.sidebar-logo { padding: 12px 18px 14px; cursor: default; }
+.sidebar-titlebar {
+  height: 38px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  -webkit-app-region: drag;
+  user-select: none;
+  flex-shrink: 0;
+}
+.sidebar-titlebar-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  -webkit-app-region: no-drag;
+}
 .sidebar-logo h1 {
   font-size: 17px;
   font-weight: 700;
@@ -323,9 +338,40 @@ input, textarea, select { font-family: inherit; }
 }
 .quick-add-btn:active { transform: translateY(0); }
 
+/* ── Sidebar titlebar (window controls) ── */
+.sidebar-titlebar {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  -webkit-app-region: drag;
+  user-select: none;
+  flex-shrink: 0;
+}
+.sidebar-titlebar-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  -webkit-app-region: no-drag;
+}
+.titlebar-btn {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.12s;
+}
+.titlebar-btn:hover { filter: brightness(1.25); transform: scale(1.15); }
+.titlebar-btn:active { transform: scale(0.9); }
+.titlebar-close    { background: #ff5f57; box-shadow: 0 0 0 1px rgba(0,0,0,0.2); }
+.titlebar-minimize { background: #febc2e; box-shadow: 0 0 0 1px rgba(0,0,0,0.2); }
+.titlebar-maximize { background: #28c840; box-shadow: 0 0 0 1px rgba(0,0,0,0.2); }
+
 /* ── Topbar ── */
 .topbar {
-  padding: 16px 32px;
+  height: 44px;
+  padding: 0 32px;
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
@@ -333,7 +379,10 @@ input, textarea, select { font-family: inherit; }
   flex-shrink: 0;
   background: rgba(7,7,13,0.6);
   backdrop-filter: blur(10px);
+  -webkit-app-region: drag;
+  user-select: none;
 }
+.topbar h2, .topbar span { -webkit-app-region: no-drag; }
 .topbar h2 { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
 .topbar-date { color: var(--text2); font-size: 12px; font-weight: 400; }
 

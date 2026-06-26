@@ -20,22 +20,17 @@ export default function App() {
   const { view, loadAll, loading } = useStore();
   const [quickAdd, setQuickAdd] = useState(false);
 
-  useEffect(() => {
-    loadAll();
-  }, []);
+  useEffect(() => { loadAll(); }, []);
 
   const today = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
+    weekday: "long", month: "long", day: "numeric", year: "numeric",
   });
 
   return (
     <div className="layout">
       <Sidebar onQuickAdd={() => setQuickAdd(true)} />
       <main className="main">
-        <div className="topbar">
+        <div className="topbar" data-tauri-drag-region>
           <h2>{VIEW_TITLES[view]}</h2>
           <span className="topbar-date">{today}</span>
         </div>

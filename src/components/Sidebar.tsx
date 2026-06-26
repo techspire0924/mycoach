@@ -1,3 +1,4 @@
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useStore, THEMES, type View } from "../store";
 
 const NAV: { id: View; icon: string; label: string; section?: string }[] = [
@@ -12,9 +13,19 @@ interface Props { onQuickAdd: () => void; }
 
 export default function Sidebar({ onQuickAdd }: Props) {
   const { view, setView, theme, setTheme } = useStore();
+  const win = getCurrentWindow();
 
   return (
     <aside className="sidebar">
+      {/* Window controls row — draggable, with macOS-style buttons */}
+      <div className="sidebar-titlebar" data-tauri-drag-region>
+        <div className="sidebar-titlebar-controls">
+          <button className="titlebar-btn titlebar-close"    onClick={() => win.close()}          title="Close" />
+          <button className="titlebar-btn titlebar-minimize" onClick={() => win.minimize()}       title="Minimize" />
+          <button className="titlebar-btn titlebar-maximize" onClick={() => win.toggleMaximize()} title="Maximize" />
+        </div>
+      </div>
+
       <div className="sidebar-logo">
         <h1>MyCoach</h1>
         <span>Personal Growth OS</span>
