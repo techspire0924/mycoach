@@ -27,7 +27,25 @@ export default function App() {
 
   useEffect(() => {
     loadAll();
-    getCurrentWindow().clearEffects().catch(() => {});
+    const win = getCurrentWindow();
+    win.clearEffects().catch(() => {});
+
+    const INTERACTIVE =
+      'button, a, input, select, textarea, [contenteditable], ' +
+      '.task-item, .goal-card, .nav-item, .inbox-item, .habit-card, ' +
+      '.subgoal-item, .cal-day, .cal-week-col, .cal-chip, ' +
+      '.week-stat, .modal, .modal-overlay, .quick-add-btn, ' +
+      '.task-check, .theme-btn, .titlebar-btn';
+
+    function onMouseDown(e: MouseEvent) {
+      if (e.button !== 0) return;
+      if (!(e.target as HTMLElement).closest(INTERACTIVE)) {
+        win.startDragging().catch(() => {});
+      }
+    }
+
+    document.addEventListener('mousedown', onMouseDown);
+    return () => document.removeEventListener('mousedown', onMouseDown);
   }, []);
 
   useEffect(() => {
@@ -42,7 +60,7 @@ export default function App() {
   });
 
   return (
-    <div className="layout" data-tauri-drag-region>
+    <div className="layout">
       <Cursor />
       <Sidebar onQuickAdd={() => setQuickAdd(true)} />
       <main className="main">
