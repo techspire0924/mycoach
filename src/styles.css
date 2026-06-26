@@ -357,15 +357,15 @@ input, textarea, select { font-family: inherit; }
 
 /* ── Layout ── */
 .layout { display: flex; height: 100vh; width: 100%; border-radius: 12px; overflow: hidden; position: relative; }
-.main   { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; background: rgba(7,7,13,0.82); }
+.main   { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; background: rgba(7,7,13,0.92); }
 .content { flex: 1; overflow-y: auto; padding: 28px 32px; animation: fadeIn 0.2s ease; }
-[data-theme="arctic"] .main   { background: rgba(235,235,248,0.88); }
-[data-theme="midnight"] .main { background: rgba(6,13,26,0.82); }
+[data-theme="arctic"] .main   { background: rgba(235,235,248,0.94); }
+[data-theme="midnight"] .main { background: rgba(6,13,26,0.92); }
 
 /* ── Sidebar ── */
 .sidebar {
   width: 230px;
-  background: rgba(10,10,20,0.6);
+  background: rgba(10,10,20,0.88);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   border-right: 1px solid rgba(255,255,255,0.07);
