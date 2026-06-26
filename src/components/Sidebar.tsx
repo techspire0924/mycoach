@@ -5,8 +5,9 @@ const NAV: { id: View; icon: string; label: string; section?: string }[] = [
   { id: "inbox",   icon: "📥", label: "Inbox",   section: "Capture" },
   { id: "daily",   icon: "☀️", label: "Daily",   section: "Plan" },
   { id: "weekly",  icon: "📅", label: "Weekly" },
-  { id: "goals",   icon: "🎯", label: "Goals",   section: "Track" },
-  { id: "habits",  icon: "🔁", label: "Habits" },
+  { id: "goals",    icon: "🎯", label: "Goals",    section: "Track" },
+  { id: "habits",   icon: "🔁", label: "Habits" },
+  { id: "calendar", icon: "📆", label: "Calendar", section: "Review" },
 ];
 
 interface Props { onQuickAdd: () => void; }

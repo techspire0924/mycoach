@@ -8,7 +8,7 @@ import {
 } from "../db/tasks";
 import { getHabits, createHabit, deleteHabit, getHabitLogs, toggleHabitLog } from "../db/habits";
 
-export type View = "inbox" | "daily" | "weekly" | "goals" | "habits";
+export type View = "inbox" | "daily" | "weekly" | "goals" | "habits" | "calendar";
 export type Theme = "cosmic" | "arctic" | "midnight";
 
 export const THEMES: { id: Theme; name: string; dot1: string; dot2: string }[] = [

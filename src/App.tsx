@@ -9,6 +9,7 @@ import Daily from "./views/Daily";
 import Weekly from "./views/Weekly";
 import Goals from "./views/Goals";
 import Habits from "./views/Habits";
+import Calendar from "./views/Calendar";
 
 const VIEW_TITLES: Record<string, string> = {
   inbox: "Inbox",
@@ -16,6 +17,7 @@ const VIEW_TITLES: Record<string, string> = {
   weekly: "Weekly Review",
   goals: "Goals",
   habits: "Habits",
+  calendar: "Calendar",
 };
 
 export default function App() {
@@ -50,6 +52,7 @@ export default function App() {
               {view === "weekly" && <Weekly />}
               {view === "goals" && <Goals />}
               {view === "habits" && <Habits />}
+              {view === "calendar" && <Calendar />}
             </>
           )}
         </div>
