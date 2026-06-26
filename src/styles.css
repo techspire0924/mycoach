@@ -12,7 +12,14 @@ body, #root { user-select: none; -webkit-user-select: none; }
 input, textarea, [contenteditable] { user-select: text; -webkit-user-select: text; }
 * { cursor: none !important; }
 
-html, body, #root {
+/* Setting html background stops WebKit from propagating body background to viewport,
+   which would ignore border-radius and paint a full rectangle */
+html {
+  background: transparent;
+  border-radius: 12px;
+  overflow: hidden;
+}
+body, #root {
   border-radius: 12px;
   overflow: hidden;
 }
