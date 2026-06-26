@@ -53,9 +53,17 @@ export default function Goals() {
   const [addingGoal, setAddingGoal] = useState(false);
   const [addingSubGoal, setAddingSubGoal] = useState(false);
 
+  function collectGoalIds(goalId: string): string[] {
+    const ids = [goalId];
+    for (const sub of goals.filter(g => g.parent_goal_id === goalId))
+      ids.push(...collectGoalIds(sub.id));
+    return ids;
+  }
+
   function goalProgress(goalId: string) {
-    const all = tasks.filter((t) => t.parent_goal_id === goalId && !t.parent_task_id);
-    const done = all.filter((t) => t.status === "done").length;
+    const ids = new Set(collectGoalIds(goalId));
+    const all = tasks.filter(t => t.parent_goal_id && ids.has(t.parent_goal_id) && !t.parent_task_id);
+    const done = all.filter(t => t.status === "done").length;
     return { done, total: all.length, pct: all.length > 0 ? Math.round((done / all.length) * 100) : 0 };
   }
 
