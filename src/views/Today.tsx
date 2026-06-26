@@ -36,10 +36,14 @@ export default function Today() {
     t.task_type === "onetime" && t.status === "in_progress" &&
     (!t.due_date || t.due_date > TODAY)
   );
+  const noDeadline = topLevel.filter(t =>
+    t.task_type === "onetime" && !t.due_date && t.status === "todo"
+  );
   const recurringToday = topLevel.filter(t => isRecurringToday(t) && !completedSet.has(t.id));
 
   const isEmpty = overdue.length === 0 && dueToday.length === 0 &&
-    inProgress.length === 0 && recurringToday.length === 0 && habits.length === 0;
+    inProgress.length === 0 && noDeadline.length === 0 &&
+    recurringToday.length === 0 && habits.length === 0;
 
   if (isEmpty) {
     return (
@@ -86,6 +90,19 @@ export default function Today() {
             <span className="today-section-count">{inProgress.length}</span>
           </div>
           {inProgress.map(t => (
+            <TaskItem key={t.id} task={t} subtasks={subtasksOf(t.id)} onEdit={setEditingTask} />
+          ))}
+        </section>
+      )}
+
+      {noDeadline.length > 0 && (
+        <section className="today-section">
+          <div className="today-section-header">
+            <span className="today-section-icon">∞</span>
+            <span className="today-section-title">No Deadline</span>
+            <span className="today-section-count">{noDeadline.length}</span>
+          </div>
+          {noDeadline.map(t => (
             <TaskItem key={t.id} task={t} subtasks={subtasksOf(t.id)} onEdit={setEditingTask} />
           ))}
         </section>
