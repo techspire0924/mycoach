@@ -1,38 +1,27 @@
 import { useEffect, useRef } from "react";
 
 export default function Cursor() {
-  const dotRef = useRef<HTMLDivElement>(null);
-  const ringRef = useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let mx = -200, my = -200;
-    let rx = -200, ry = -200;
     let raf: number;
+    const el = ref.current!;
 
-    const dot  = dotRef.current!;
-    const ring = ringRef.current!;
-
-    function onMove(e: MouseEvent) {
-      mx = e.clientX;
-      my = e.clientY;
-    }
+    function onMove(e: MouseEvent) { mx = e.clientX; my = e.clientY; }
 
     function onOver(e: MouseEvent) {
-      const el = (e.target as HTMLElement).closest(
-        "button, a, input, select, textarea, label, [role='button'], .nav-item, .goal-card, .inbox-item, .triage-btn"
+      const hit = (e.target as HTMLElement).closest(
+        "button, a, input, select, textarea, label, [role='button'], .nav-item, .goal-card, .inbox-item"
       );
-      dot.classList.toggle("hover", !!el);
-      ring.classList.toggle("hover", !!el);
+      el.classList.toggle("hover", !!hit);
     }
 
-    function onDown() { dot.classList.add("click"); ring.classList.add("click"); }
-    function onUp()   { dot.classList.remove("click"); ring.classList.remove("click"); }
+    function onDown() { el.classList.add("click"); }
+    function onUp()   { el.classList.remove("click"); }
 
     function tick() {
-      dot.style.transform  = `translate(${mx}px, ${my}px)`;
-      rx += (mx - rx) * 0.12;
-      ry += (my - ry) * 0.12;
-      ring.style.transform = `translate(${rx}px, ${ry}px)`;
+      el.style.transform = `translate(${mx}px, ${my}px)`;
       raf = requestAnimationFrame(tick);
     }
 
@@ -51,10 +40,5 @@ export default function Cursor() {
     };
   }, []);
 
-  return (
-    <>
-      <div ref={dotRef}  className="cursor-dot"  />
-      <div ref={ringRef} className="cursor-ring" />
-    </>
-  );
+  return <div ref={ref} className="cursor-emoji">👆</div>;
 }
