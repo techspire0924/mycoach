@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import twemoji from "twemoji";
 import { useStore } from "./store";
 import Sidebar from "./components/Sidebar";
 import Cursor from "./components/Cursor";
@@ -28,6 +29,13 @@ export default function App() {
     loadAll();
     getCurrentWindow().clearEffects().catch(() => {});
   }, []);
+
+  useEffect(() => {
+    const id = setTimeout(() => {
+      twemoji.parse(document.body, { folder: "svg", ext: ".svg", className: "twemoji" });
+    }, 50);
+    return () => clearTimeout(id);
+  }, [view, loading, quickAdd]);
 
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long", month: "long", day: "numeric", year: "numeric",

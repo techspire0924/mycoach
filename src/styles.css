@@ -5,6 +5,13 @@ body, #root { user-select: none; -webkit-user-select: none; }
 input, textarea, [contenteditable] { user-select: text; -webkit-user-select: text; }
 * { cursor: none !important; }
 
+img.twemoji {
+  height: 1.1em;
+  width: 1.1em;
+  vertical-align: -0.15em;
+  display: inline-block;
+}
+
 /* ── Custom emoji cursor ── */
 .cursor-emoji {
   position: fixed;
