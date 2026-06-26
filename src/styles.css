@@ -144,7 +144,6 @@ img.twemoji {
   --inprog:        #d97706;
   --inprog-bg:     rgba(217,119,6,0.1);
 }
-[data-theme="arctic"] body { background: rgba(235,235,248,0.80); }
 [data-theme="arctic"] #root::after {
   background: linear-gradient(135deg, rgba(124,58,237,0.6) 0%, rgba(99,102,241,0.6) 100%);
 }
@@ -154,10 +153,10 @@ img.twemoji {
     inset 0 0 24px rgba(124,58,237,0.1),
     inset 0 0 48px rgba(99,102,241,0.06);
 }
-[data-theme="arctic"] body::before {
+[data-theme="arctic"] .layout::before {
   background: radial-gradient(circle, rgba(124,58,237,0.05) 0%, transparent 70%);
 }
-[data-theme="arctic"] body::after {
+[data-theme="arctic"] .layout::after {
   background: radial-gradient(circle, rgba(99,102,241,0.04) 0%, transparent 70%);
 }
 [data-theme="arctic"] .sidebar {
@@ -227,7 +226,6 @@ img.twemoji {
   --inprog:        #fbbf24;
   --inprog-bg:     rgba(251,191,36,0.12);
 }
-[data-theme="midnight"] body { background: rgba(6,13,26,0.75); }
 [data-theme="midnight"] #root::after {
   background: linear-gradient(135deg, rgba(59,130,246,0.7) 0%, rgba(245,158,11,0.7) 100%);
 }
@@ -238,10 +236,10 @@ img.twemoji {
     inset 0 0 48px rgba(59,130,246,0.08),
     inset 0 0 8px rgba(245,158,11,0.12);
 }
-[data-theme="midnight"] body::before {
+[data-theme="midnight"] .layout::before {
   background: radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%);
 }
-[data-theme="midnight"] body::after {
+[data-theme="midnight"] .layout::after {
   background: radial-gradient(circle, rgba(245,158,11,0.06) 0%, transparent 70%);
 }
 [data-theme="midnight"] .sidebar {
@@ -289,7 +287,7 @@ img.twemoji {
 
 body {
   font-family: 'Inter', 'TwemojiMozilla', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: rgba(7,7,13,0.75);
+  background: transparent;
   color: var(--text);
   height: 100vh;
   overflow: hidden;
@@ -297,20 +295,20 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Background orbs */
-body::before, body::after {
+/* Background orbs — position:absolute so overflow:hidden on .layout clips them */
+.layout::before, .layout::after {
   content: '';
-  position: fixed;
+  position: absolute;
   border-radius: 50%;
   pointer-events: none;
   z-index: 0;
 }
-body::before {
+.layout::before {
   width: 600px; height: 600px;
   background: radial-gradient(circle, rgba(124,58,237,0.06) 0%, transparent 70%);
   top: -200px; left: -100px;
 }
-body::after {
+.layout::after {
   width: 500px; height: 500px;
   background: radial-gradient(circle, rgba(236,72,153,0.05) 0%, transparent 70%);
   bottom: -150px; right: -100px;
@@ -358,7 +356,7 @@ input, textarea, select { font-family: inherit; }
 }
 
 /* ── Layout ── */
-.layout { display: flex; height: 100vh; width: 100%; border-radius: 12px; overflow: hidden; }
+.layout { display: flex; height: 100vh; width: 100%; border-radius: 12px; overflow: hidden; position: relative; }
 .main   { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; background: rgba(7,7,13,0.82); }
 .content { flex: 1; overflow-y: auto; padding: 28px 32px; animation: fadeIn 0.2s ease; }
 [data-theme="arctic"] .main   { background: rgba(235,235,248,0.88); }
