@@ -5,6 +5,7 @@ export default function Cursor() {
 
   useEffect(() => {
     let mx = -200, my = -200;
+    let clicking = false;
     let raf: number;
     const el = ref.current!;
 
@@ -17,11 +18,11 @@ export default function Cursor() {
       el.classList.toggle("hover", !!hit);
     }
 
-    function onDown() { el.classList.add("click"); }
-    function onUp()   { el.classList.remove("click"); }
+    function onDown() { clicking = true;  el.classList.add("click"); }
+    function onUp()   { clicking = false; el.classList.remove("click"); }
 
     function tick() {
-      el.style.transform = `translate(${mx}px, ${my}px)`;
+      el.style.transform = `translate(${mx - 6}px, ${my - 2 + (clicking ? 2 : 0)}px)`;
       raf = requestAnimationFrame(tick);
     }
 

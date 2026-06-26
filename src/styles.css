@@ -18,16 +18,13 @@ input, textarea, [contenteditable] { user-select: text; -webkit-user-select: tex
   pointer-events: none;
   z-index: 999999;
   will-change: transform;
-  transition: transform 0.08s ease, filter 0.15s;
+  transition: filter 0.1s;
   filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35));
-  transform-origin: 6px 2px;
 }
 .cursor-emoji.hover {
   filter: drop-shadow(0 3px 10px rgba(124,58,237,0.6));
-  font-size: 24px;
 }
 .cursor-emoji.click {
-  margin-top: 2px;
   filter: drop-shadow(0 1px 4px rgba(0,0,0,0.5));
 }
 
