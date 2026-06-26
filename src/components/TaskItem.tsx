@@ -7,6 +7,7 @@ interface Props {
   task: Task;
   subtasks?: Task[];
   onEdit?: (task: Task) => void;
+  completedToday?: boolean;
 }
 
 const STATUS_CYCLE: Record<string, { next: string; icon: string; cls: string; title: string }> = {
@@ -15,20 +16,45 @@ const STATUS_CYCLE: Record<string, { next: string; icon: string; cls: string; ti
   done:        { next: "todo",        icon: "✓", cls: "checked", title: "Mark todo" },
 };
 
-export default function TaskItem({ task, subtasks = [], onEdit }: Props) {
-  const { cycleTaskStatus, removeTask } = useStore();
+const DAY_NAMES = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+
+function recurrenceLabel(task: Task): string {
+  if (task.recurrence_type === "daily") return "↻ Daily";
+  if (task.recurrence_type === "workdays") return "↻ Workdays";
+  if (task.recurrence_type === "custom" && task.recurrence_days) {
+    const days = JSON.parse(task.recurrence_days) as number[];
+    return "↻ " + days.map((d) => DAY_NAMES[d]).join(" ");
+  }
+  return "↻";
+}
+
+export default function TaskItem({ task, subtasks = [], onEdit, completedToday }: Props) {
+  const { cycleTaskStatus, toggleRecurring, removeTask } = useStore();
   const [expanded, setExpanded] = useState(false);
   const [addingSubtask, setAddingSubtask] = useState(false);
 
-  const s = STATUS_CYCLE[task.status] ?? STATUS_CYCLE.todo;
-  const isDone = task.status === "done";
+  const isRecurring = task.task_type === "recurring";
+  const isDone = isRecurring ? !!completedToday : task.status === "done";
+  const s = isRecurring
+    ? (isDone
+      ? { icon: "✓", cls: "checked", title: "Mark incomplete" }
+      : { icon: "",  cls: "",        title: "Mark complete for today" })
+    : (STATUS_CYCLE[task.status] ?? STATUS_CYCLE.todo);
+
+  function handleCheck() {
+    if (isRecurring) {
+      toggleRecurring(task.id);
+    } else {
+      cycleTaskStatus(task.id, task.status);
+    }
+  }
 
   return (
     <>
       <div className={`task-item${isDone ? " done" : ""}`}>
         <button
           className={`task-check${s.cls ? ` ${s.cls}` : ""}`}
-          onClick={() => cycleTaskStatus(task.id, task.status)}
+          onClick={handleCheck}
           title={s.title}
         >
           {s.icon}
@@ -37,11 +63,19 @@ export default function TaskItem({ task, subtasks = [], onEdit }: Props) {
           <div className="task-title">{task.title}</div>
           <div className="task-meta">
             {task.is_urgent === 1 && <span className="tag tag-urgent">Urgent</span>}
-            {task.status === "in_progress" && <span className="tag tag-inprogress">In Progress</span>}
+            {!isRecurring && task.status === "in_progress" && <span className="tag tag-inprogress">In Progress</span>}
             {isDone && <span className="tag tag-done">Done</span>}
-            {task.due_date && (
+            {isRecurring && (
+              <span className="tag tag-recur">{recurrenceLabel(task)}</span>
+            )}
+            {!isRecurring && task.due_date && (
               <span className="tag tag-due">
                 {new Date(task.due_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+              </span>
+            )}
+            {isRecurring && task.recurrence_end_date && (
+              <span className="tag tag-due">
+                until {new Date(task.recurrence_end_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
               </span>
             )}
           </div>

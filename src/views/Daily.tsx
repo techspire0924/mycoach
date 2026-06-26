@@ -4,22 +4,41 @@ import type { Task } from "../db/types";
 import TaskItem from "../components/TaskItem";
 import AddTaskModal from "../components/AddTaskModal";
 
+const TODAY = new Date().toISOString().split("T")[0];
+const TODAY_DOW = new Date().getDay(); // 0=Sun
+
+function showsToday(t: Task): boolean {
+  if (t.task_type === "onetime") return t.status !== "done";
+  // Recurring: check end date
+  if (t.recurrence_end_date && TODAY > t.recurrence_end_date) return false;
+  if (t.recurrence_type === "daily") return true;
+  if (t.recurrence_type === "workdays") return TODAY_DOW >= 1 && TODAY_DOW <= 5;
+  if (t.recurrence_type === "custom" && t.recurrence_days) {
+    return (JSON.parse(t.recurrence_days) as number[]).includes(TODAY_DOW);
+  }
+  return false;
+}
+
 export default function Daily() {
-  const { tasks, goals } = useStore();
+  const { tasks, goals, todayCompletions } = useStore();
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [addingToGoal, setAddingToGoal] = useState<string | undefined>(undefined);
   const [showDone, setShowDone] = useState(false);
 
+  const completedSet = new Set(todayCompletions);
   const subtasksOf = (id: string) => tasks.filter((t) => t.parent_task_id === id);
   const goalMap = new Map(goals.map((g) => [g.id, g]));
 
   const topLevel = tasks.filter((t) => !t.parent_task_id);
-  const openTasks = topLevel.filter((t) => t.status !== "done");
-  const doneTasks = topLevel.filter((t) => t.status === "done");
+  const activeTasks = topLevel.filter((t) => showsToday(t) && !(t.task_type === "recurring" && completedSet.has(t.id)));
+  const doneTasks = topLevel.filter((t) =>
+    t.task_type === "onetime" ? t.status === "done" :
+    completedSet.has(t.id) && showsToday(t)
+  );
 
-  // Group open tasks by goal
+  // Group active tasks by goal
   const tasksByGoal = new Map<string | null, Task[]>();
-  for (const task of openTasks) {
+  for (const task of activeTasks) {
     const key = task.parent_goal_id ?? null;
     if (!tasksByGoal.has(key)) tasksByGoal.set(key, []);
     tasksByGoal.get(key)!.push(task);
@@ -29,22 +48,24 @@ export default function Daily() {
 
   function goalProgress(goalId: string) {
     const all = tasks.filter((t) => t.parent_goal_id === goalId && !t.parent_task_id);
-    const done = all.filter((t) => t.status === "done").length;
+    const done = all.filter((t) =>
+      t.task_type === "onetime" ? t.status === "done" : completedSet.has(t.id)
+    ).length;
     return { done, total: all.length };
   }
 
-  if (openTasks.length === 0 && doneTasks.length === 0) {
+  if (activeTasks.length === 0 && doneTasks.length === 0) {
     return (
       <div className="empty-state">
         <div className="empty-state-icon">☀️</div>
-        <p>No tasks — add some from Inbox or Quick Add</p>
+        <p>No tasks for today — add some from Inbox or Quick Add</p>
       </div>
     );
   }
 
   return (
     <>
-      {openTasks.length === 0 && doneTasks.length > 0 && (
+      {activeTasks.length === 0 && doneTasks.length > 0 && (
         <div className="empty-state">
           <div className="empty-state-icon">🎉</div>
           <p>All done for today!</p>
@@ -74,7 +95,13 @@ export default function Daily() {
               </button>
             </div>
             {groupTasks.map((t) => (
-              <TaskItem key={t.id} task={t} subtasks={subtasksOf(t.id)} onEdit={setEditingTask} />
+              <TaskItem
+                key={t.id}
+                task={t}
+                subtasks={subtasksOf(t.id)}
+                onEdit={setEditingTask}
+                completedToday={completedSet.has(t.id)}
+              />
             ))}
           </div>
         );
@@ -86,21 +113,37 @@ export default function Daily() {
             <span className="goal-group-label" style={{ color: "var(--text2)" }}>📋 Standalone</span>
           </div>
           {(tasksByGoal.get(null) ?? []).map((t) => (
-            <TaskItem key={t.id} task={t} subtasks={subtasksOf(t.id)} onEdit={setEditingTask} />
+            <TaskItem
+              key={t.id}
+              task={t}
+              subtasks={subtasksOf(t.id)}
+              onEdit={setEditingTask}
+              completedToday={completedSet.has(t.id)}
+            />
           ))}
         </div>
       )}
 
       {doneTasks.length > 0 && (
         <div className="goal-group">
-          <div className="goal-group-header" style={{ cursor: "pointer" }} onClick={() => setShowDone((v) => !v)}>
+          <div
+            className="goal-group-header"
+            style={{ cursor: "pointer" }}
+            onClick={() => setShowDone((v) => !v)}
+          >
             <span className="goal-group-label" style={{ color: "var(--done)" }}>
               {showDone ? "▼" : "▶"} ✓ Completed ({doneTasks.length})
             </span>
             <span style={{ fontSize: 12, color: "var(--text2)", marginLeft: "auto" }}>click to undo</span>
           </div>
           {showDone && doneTasks.map((t) => (
-            <TaskItem key={t.id} task={t} subtasks={subtasksOf(t.id)} onEdit={setEditingTask} />
+            <TaskItem
+              key={t.id}
+              task={t}
+              subtasks={subtasksOf(t.id)}
+              onEdit={setEditingTask}
+              completedToday={completedSet.has(t.id)}
+            />
           ))}
         </div>
       )}

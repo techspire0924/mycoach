@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import type { Task } from "../db/types";
+import type { Task, TaskType, RecurrenceType } from "../db/types";
 import { useStore } from "../store";
 
 interface Props {
@@ -9,41 +9,59 @@ interface Props {
   defaultParentTaskId?: string;
 }
 
+const DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+
 export default function AddTaskModal({ onClose, editTask, defaultGoalId, defaultParentTaskId }: Props) {
   const { goals, tasks, addTask, editTask: updateTask } = useStore();
   const [title, setTitle] = useState(editTask?.title ?? "");
+  const [goalId, setGoalId] = useState(editTask?.parent_goal_id ?? defaultGoalId ?? "");
+  const [taskType, setTaskType] = useState<TaskType>(editTask?.task_type ?? "onetime");
   const [dueDate, setDueDate] = useState(editTask?.due_date ?? "");
   const [isUrgent, setIsUrgent] = useState(editTask ? editTask.is_urgent === 1 : false);
-  const [goalId, setGoalId] = useState(editTask?.parent_goal_id ?? defaultGoalId ?? "");
+  const [recurType, setRecurType] = useState<RecurrenceType>(editTask?.recurrence_type ?? "daily");
+  const [recurDays, setRecurDays] = useState<number[]>(
+    editTask?.recurrence_days ? JSON.parse(editTask.recurrence_days) : [1, 2, 3, 4, 5]
+  );
+  const [recurEnd, setRecurEnd] = useState(editTask?.recurrence_end_date ?? "");
 
   const parentTask = defaultParentTaskId ? tasks.find((t) => t.id === defaultParentTaskId) : null;
 
   useEffect(() => {
     if (editTask) {
       setTitle(editTask.title);
+      setGoalId(editTask.parent_goal_id ?? "");
+      setTaskType(editTask.task_type ?? "onetime");
       setDueDate(editTask.due_date ?? "");
       setIsUrgent(editTask.is_urgent === 1);
-      setGoalId(editTask.parent_goal_id ?? "");
+      setRecurType(editTask.recurrence_type ?? "daily");
+      setRecurDays(editTask.recurrence_days ? JSON.parse(editTask.recurrence_days) : [1, 2, 3, 4, 5]);
+      setRecurEnd(editTask.recurrence_end_date ?? "");
     }
   }, [editTask]);
 
+  function toggleDay(d: number) {
+    setRecurDays((prev) =>
+      prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d].sort((a, b) => a - b)
+    );
+  }
+
   async function handleSave() {
     if (!title.trim()) return;
+    const isRecurring = taskType === "recurring";
+    const data = {
+      title: title.trim(),
+      due_date: !isRecurring && dueDate ? dueDate : undefined,
+      is_urgent: isUrgent,
+      parent_goal_id: goalId || undefined,
+      task_type: taskType,
+      recurrence_type: isRecurring ? recurType : undefined,
+      recurrence_days: isRecurring && recurType === "custom" ? JSON.stringify(recurDays) : undefined,
+      recurrence_end_date: isRecurring && recurEnd ? recurEnd : undefined,
+    };
     if (editTask) {
-      await updateTask(editTask.id, {
-        title: title.trim(),
-        due_date: dueDate || undefined,
-        is_urgent: isUrgent ? 1 : 0,
-        parent_goal_id: goalId || undefined,
-      });
+      await updateTask(editTask.id, { ...data, is_urgent: isUrgent ? 1 : 0 });
     } else {
-      await addTask({
-        title: title.trim(),
-        due_date: dueDate || undefined,
-        is_urgent: isUrgent,
-        parent_goal_id: goalId || undefined,
-        parent_task_id: defaultParentTaskId,
-      });
+      await addTask({ ...data, parent_task_id: defaultParentTaskId });
     }
     onClose();
   }
@@ -65,22 +83,88 @@ export default function AddTaskModal({ onClose, editTask, defaultGoalId, default
           onKeyDown={(e) => e.key === "Enter" && handleSave()}
           autoFocus
         />
+
         {!defaultParentTaskId && (
-          <select className="modal-select" value={goalId} onChange={(e) => setGoalId(e.target.value)}>
-            <option value="">No goal (standalone)</option>
-            {goals.filter((g) => g.status !== "completed").map((g) => (
-              <option key={g.id} value={g.id}>{g.title}</option>
-            ))}
-          </select>
+          <>
+            {/* Task type toggle */}
+            <div className="task-type-toggle">
+              <button
+                className={`type-btn${taskType === "onetime" ? " active" : ""}`}
+                onClick={() => setTaskType("onetime")}
+              >
+                One-time
+              </button>
+              <button
+                className={`type-btn${taskType === "recurring" ? " active" : ""}`}
+                onClick={() => setTaskType("recurring")}
+              >
+                ↻ Recurring
+              </button>
+            </div>
+
+            {taskType === "onetime" && (
+              <input
+                className="modal-input"
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+              />
+            )}
+
+            {taskType === "recurring" && (
+              <div className="recur-section">
+                <div className="recur-type-row">
+                  {(["daily", "workdays", "custom"] as RecurrenceType[]).map((rt) => (
+                    <button
+                      key={rt}
+                      className={`recur-type-btn${recurType === rt ? " active" : ""}`}
+                      onClick={() => setRecurType(rt)}
+                    >
+                      {rt === "daily" ? "Every day" : rt === "workdays" ? "Workdays" : "Custom"}
+                    </button>
+                  ))}
+                </div>
+                {recurType === "custom" && (
+                  <div className="day-picker">
+                    {DAYS.map((name, i) => (
+                      <button
+                        key={i}
+                        className={`day-btn${recurDays.includes(i) ? " active" : ""}`}
+                        onClick={() => toggleDay(i)}
+                      >
+                        {name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="recur-end-row">
+                  <span className="recur-label">Ends</span>
+                  <input
+                    className="modal-input"
+                    type="date"
+                    value={recurEnd}
+                    onChange={(e) => setRecurEnd(e.target.value)}
+                    placeholder="Never"
+                    style={{ marginBottom: 0 }}
+                  />
+                  {recurEnd && (
+                    <button className="btn btn-ghost" style={{ fontSize: 12, padding: "4px 8px" }} onClick={() => setRecurEnd("")}>
+                      ✕ Never
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <select className="modal-select" value={goalId} onChange={(e) => setGoalId(e.target.value)}>
+              <option value="">No goal (standalone)</option>
+              {goals.filter((g) => g.status !== "completed").map((g) => (
+                <option key={g.id} value={g.id}>{g.title}</option>
+              ))}
+            </select>
+          </>
         )}
-        <div className="modal-row">
-          <input
-            className="modal-input"
-            type="date"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-          />
-        </div>
+
         <label className="modal-check">
           <input type="checkbox" checked={isUrgent} onChange={(e) => setIsUrgent(e.target.checked)} />
           Mark as Urgent

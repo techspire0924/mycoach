@@ -1,7 +1,11 @@
 import { create } from "zustand";
-import type { Goal, Task, Habit, HabitLog } from "../db/types";
+import type { Goal, Task, Habit, HabitLog, TaskType, RecurrenceType } from "../db/types";
 import { getGoals, createGoal, updateGoal, deleteGoal, setGoalStatus } from "../db/goals";
-import { getAllTasks, getInboxTasks, createTask, setTaskStatus, deleteTask, updateTask, getWeeklySummary } from "../db/tasks";
+import {
+  getAllTasks, getInboxTasks, createTask, setTaskStatus,
+  deleteTask, updateTask, getWeeklySummary,
+  getTodayCompletions, toggleTaskCompletion,
+} from "../db/tasks";
 import { getHabits, createHabit, deleteHabit, getHabitLogs, toggleHabitLog } from "../db/habits";
 
 export type View = "inbox" | "daily" | "weekly" | "goals" | "habits";
@@ -28,6 +32,7 @@ interface AppState {
   habits: Habit[];
   habitLogs: Record<string, HabitLog[]>;
   weeklySummary: WeeklySummary | null;
+  todayCompletions: string[]; // task IDs completed today
   loading: boolean;
 
   setView: (v: View) => Promise<void>;
@@ -40,11 +45,26 @@ interface AppState {
 
   loadTasks: () => Promise<void>;
   loadInbox: () => Promise<void>;
-  addTask: (data: { title: string; due_date?: string; is_urgent?: boolean; parent_goal_id?: string; parent_task_id?: string }) => Promise<void>;
+  addTask: (data: {
+    title: string;
+    due_date?: string;
+    is_urgent?: boolean;
+    parent_goal_id?: string;
+    parent_task_id?: string;
+    task_type?: TaskType;
+    recurrence_type?: RecurrenceType;
+    recurrence_days?: string;
+    recurrence_end_date?: string;
+  }) => Promise<void>;
   cycleTaskStatus: (id: string, currentStatus: string) => Promise<void>;
-  editTask: (id: string, data: Partial<Pick<Task, "title" | "status" | "due_date" | "is_urgent" | "parent_goal_id" | "parent_task_id">>) => Promise<void>;
+  toggleRecurring: (taskId: string) => Promise<void>;
+  editTask: (id: string, data: Partial<Pick<Task,
+    "title" | "status" | "due_date" | "is_urgent" | "parent_goal_id" | "parent_task_id" |
+    "task_type" | "recurrence_type" | "recurrence_days" | "recurrence_end_date"
+  >>) => Promise<void>;
   removeTask: (id: string) => Promise<void>;
   triageTask: (id: string, goalId: string) => Promise<void>;
+  loadTodayCompletions: () => Promise<void>;
 
   loadHabits: () => Promise<void>;
   loadHabitLogs: (habitId: string) => Promise<void>;
@@ -70,49 +90,25 @@ export const useStore = create<AppState>((set, get) => ({
   habits: [],
   habitLogs: {},
   weeklySummary: null,
+  todayCompletions: [],
   loading: false,
 
   setView: async (v) => {
     set({ view: v });
     if (v === "weekly") await get().loadWeekly();
-    if (v === "daily") await get().loadTasks();
+    if (v === "daily") { await get().loadTasks(); await get().loadTodayCompletions(); }
     if (v === "inbox") await Promise.all([get().loadTasks(), get().loadInbox()]);
   },
 
-  loadGoals: async () => {
-    const goals = await getGoals();
-    set({ goals });
-  },
+  loadGoals: async () => { set({ goals: await getGoals() }); },
 
-  addGoal: async (data) => {
-    await createGoal(data);
-    await get().loadGoals();
-  },
+  addGoal: async (data) => { await createGoal(data); await get().loadGoals(); },
+  editGoal: async (id, data) => { await updateGoal(id, data); await get().loadGoals(); },
+  removeGoal: async (id) => { await deleteGoal(id); await Promise.all([get().loadGoals(), get().loadTasks()]); },
+  completeGoal: async (id) => { await setGoalStatus(id, "completed"); await get().loadGoals(); },
 
-  editGoal: async (id, data) => {
-    await updateGoal(id, data);
-    await get().loadGoals();
-  },
-
-  removeGoal: async (id) => {
-    await deleteGoal(id);
-    await Promise.all([get().loadGoals(), get().loadTasks()]);
-  },
-
-  completeGoal: async (id) => {
-    await setGoalStatus(id, "completed");
-    await get().loadGoals();
-  },
-
-  loadTasks: async () => {
-    const tasks = await getAllTasks();
-    set({ tasks });
-  },
-
-  loadInbox: async () => {
-    const inboxTasks = await getInboxTasks();
-    set({ inboxTasks });
-  },
+  loadTasks: async () => { set({ tasks: await getAllTasks() }); },
+  loadInbox: async () => { set({ inboxTasks: await getInboxTasks() }); },
 
   addTask: async (data) => {
     await createTask(data);
@@ -123,6 +119,11 @@ export const useStore = create<AppState>((set, get) => ({
     const next = currentStatus === "todo" ? "in_progress" : currentStatus === "in_progress" ? "done" : "todo";
     await setTaskStatus(id, next);
     await Promise.all([get().loadTasks(), get().loadInbox(), get().loadWeekly()]);
+  },
+
+  toggleRecurring: async (taskId) => {
+    await toggleTaskCompletion(taskId);
+    await get().loadTodayCompletions();
   },
 
   editTask: async (id, data) => {
@@ -140,37 +141,22 @@ export const useStore = create<AppState>((set, get) => ({
     await Promise.all([get().loadTasks(), get().loadInbox()]);
   },
 
-  loadHabits: async () => {
-    const habits = await getHabits();
-    set({ habits });
+  loadTodayCompletions: async () => {
+    set({ todayCompletions: await getTodayCompletions() });
   },
 
+  loadHabits: async () => { set({ habits: await getHabits() }); },
   loadHabitLogs: async (habitId) => {
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 6);
     const logs = await getHabitLogs(habitId, weekAgo.toISOString().split("T")[0]);
     set((s) => ({ habitLogs: { ...s.habitLogs, [habitId]: logs } }));
   },
+  addHabit: async (data) => { await createHabit(data); await get().loadHabits(); },
+  removeHabit: async (id) => { await deleteHabit(id); await get().loadHabits(); },
+  toggleHabit: async (habitId, date) => { await toggleHabitLog(habitId, date); await get().loadHabitLogs(habitId); },
 
-  addHabit: async (data) => {
-    await createHabit(data);
-    await get().loadHabits();
-  },
-
-  removeHabit: async (id) => {
-    await deleteHabit(id);
-    await get().loadHabits();
-  },
-
-  toggleHabit: async (habitId, date) => {
-    await toggleHabitLog(habitId, date);
-    await get().loadHabitLogs(habitId);
-  },
-
-  loadWeekly: async () => {
-    const weeklySummary = await getWeeklySummary();
-    set({ weeklySummary });
-  },
+  loadWeekly: async () => { set({ weeklySummary: await getWeeklySummary() }); },
 
   loadAll: async () => {
     set({ loading: true });
@@ -180,6 +166,7 @@ export const useStore = create<AppState>((set, get) => ({
       get().loadInbox(),
       get().loadHabits(),
       get().loadWeekly(),
+      get().loadTodayCompletions(),
     ]);
     set({ loading: false });
   },
