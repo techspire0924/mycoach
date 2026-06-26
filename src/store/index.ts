@@ -77,7 +77,7 @@ interface AppState {
 }
 
 export const useStore = create<AppState>((set, get) => ({
-  view: "inbox",
+  view: "today",
   theme: (localStorage.getItem("mycoach-theme") as Theme) ?? "cosmic",
   setTheme: (t) => {
     document.documentElement.setAttribute("data-theme", t);
@@ -172,6 +172,7 @@ export const useStore = create<AppState>((set, get) => ({
       get().loadWeekly(),
       get().loadTodayCompletions(),
     ]);
+    await Promise.all(get().habits.map(h => get().loadHabitLogs(h.id)));
     set({ loading: false });
   },
 }));

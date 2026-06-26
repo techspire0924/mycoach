@@ -29,8 +29,11 @@ export default function Sidebar({ onQuickAdd }: Props) {
       </div>
 
       <div className="sidebar-logo">
-        <h1>MyCoach</h1>
-        <span>Personal Growth OS</span>
+        <img src="/mycoach-icon.png" className="sidebar-logo-img" alt="MyCoach" />
+        <div className="sidebar-logo-text">
+          <h1>MyCoach</h1>
+          <span>Personal Growth OS</span>
+        </div>
       </div>
 
       <nav className="sidebar-nav">
