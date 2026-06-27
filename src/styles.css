@@ -509,10 +509,32 @@ input, textarea, select { font-family: inherit; }
 /* Focus mode — compact window, no sidebar */
 .layout.focus-mode .topbar {
   padding: 0 16px;
-  justify-content: space-between;
+  height: 38px;
 }
-.focus-title { font-size: 15px; font-weight: 700; }
-.layout.focus-mode .content { padding: 16px 18px; }
+.focus-title { font-size: 14px; font-weight: 700; }
+.layout.focus-mode .content { padding: 12px 14px; }
+
+.layout.focus-mode .today-section { margin-bottom: 14px; }
+.layout.focus-mode .today-section-header { margin-bottom: 6px; padding-bottom: 4px; }
+.layout.focus-mode .today-section-icon { font-size: 13px; }
+.layout.focus-mode .today-section-title { font-size: 11px; }
+
+.layout.focus-mode .task-item {
+  padding: 8px 10px;
+  gap: 8px;
+  margin-bottom: 5px;
+  border-radius: 8px;
+}
+.layout.focus-mode .task-item:hover { transform: none; }
+.layout.focus-mode .task-title { font-size: 12px; }
+.layout.focus-mode .task-meta { gap: 4px; margin-top: 2px; }
+.layout.focus-mode .tag { font-size: 10px; padding: 1px 5px; }
+.layout.focus-mode .task-check { width: 18px; height: 18px; font-size: 10px; flex-shrink: 0; }
+.layout.focus-mode .task-actions { display: none; }
+
+.layout.focus-mode .today-habit-row { padding: 7px 10px; gap: 8px; border-radius: 8px; }
+.layout.focus-mode .today-habit-check { width: 16px; height: 16px; }
+.layout.focus-mode .today-habit-name { font-size: 12px; }
 
 /* ── Task item ── */
 .task-item {
