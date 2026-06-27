@@ -64,11 +64,14 @@ export default function Goals() {
     const ids = new Set(collectGoalIds(goalId));
     const all = tasks.filter(t => t.parent_goal_id && ids.has(t.parent_goal_id) && !t.parent_task_id);
     const done = all.filter(t =>
-      t.task_type === "recurring"
-        ? todayCompletions.includes(t.id)
-        : t.status === "done"
+      t.task_type === "recurring" ? todayCompletions.includes(t.id) : t.status === "done"
     ).length;
-    return { done, total: all.length, pct: all.length > 0 ? Math.round((done / all.length) * 100) : 0 };
+    const inProgress = all.filter(t =>
+      t.task_type === "recurring"
+        ? (t.status === "in_progress" && !todayCompletions.includes(t.id))
+        : t.status === "in_progress"
+    ).length;
+    return { done, inProgress, total: all.length, pct: all.length > 0 ? Math.round(((done + inProgress * 0.5) / all.length) * 100) : 0 };
   }
 
   if (detailGoal) {
@@ -77,7 +80,7 @@ export default function Goals() {
     const goalTasks = tasks.filter((t) => t.parent_goal_id === currentGoal.id && !t.parent_task_id);
     const subGoals = goals.filter((g) => g.parent_goal_id === currentGoal.id);
     const subtasksOf = (id: string) => tasks.filter((t) => t.parent_task_id === id);
-    const { done, total, pct } = goalProgress(currentGoal.id);
+    const { done, inProgress, total, pct } = goalProgress(currentGoal.id);
 
     return (
       <>
@@ -90,7 +93,7 @@ export default function Goals() {
               <span>Target: <strong>{new Date(currentGoal.target_date + "T00:00:00").toLocaleDateString("en-US", { month: "long", year: "numeric" })}</strong></span>
             )}
             <span>Progress: <strong>{pct}%</strong></span>
-            <span>Tasks: <strong>{done}/{total} done</strong></span>
+            <span>Tasks: <strong>{done}/{total} done</strong>{inProgress > 0 && <span style={{ marginLeft: 8, color: "var(--inprog)" }}>◐ {inProgress} in progress</span>}</span>
           </div>
           <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button className="btn btn-primary" style={{ fontSize: 13 }} onClick={() => setAddingTask(true)}>+ Add Task</button>
@@ -182,7 +185,7 @@ export default function Goals() {
 
       <div className="goals-grid">
         {topGoals.map((g) => {
-          const { done, total, pct } = goalProgress(g.id);
+          const { done, inProgress, total, pct } = goalProgress(g.id);
           const subGoals = goals.filter((sg) => sg.parent_goal_id === g.id);
           return (
             <div key={g.id} className="goal-card" onClick={() => setDetailGoal(g)}>
@@ -203,6 +206,7 @@ export default function Goals() {
               <div className="goal-card-stats">
                 <span>📋 {total} tasks</span>
                 <span>✓ {done} done</span>
+                {inProgress > 0 && <span style={{ color: "var(--inprog)" }}>◐ {inProgress} in progress</span>}
                 {subGoals.length > 0 && <span>🎯 {subGoals.length} sub-goals</span>}
                 <span style={{ marginLeft: "auto" }}>{pct}%</span>
               </div>
