@@ -27,6 +27,7 @@ const VIEW_TITLES: Record<string, string> = {
 export default function App() {
   const { view, loadAll, loading, focusMode, setFocusMode } = useStore();
   const [quickAdd, setQuickAdd] = useState(false);
+  const [pinned, setPinned] = useState(false);
 
   useEffect(() => {
     loadAll();
@@ -61,6 +62,12 @@ export default function App() {
 
   const win = getCurrentWindow();
 
+  async function togglePin() {
+    const next = !pinned;
+    setPinned(next);
+    await win.setAlwaysOnTop(next);
+  }
+
   async function toggleFocus() {
     const next = !focusMode;
     setFocusMode(next);
@@ -88,6 +95,9 @@ export default function App() {
             : <h2>{VIEW_TITLES[view]}</h2>}
           <div className="topbar-right">
             {!focusMode && <span className="topbar-date">{today}</span>}
+            <button className={`pin-btn${pinned ? " active" : ""}`} onClick={togglePin} title={pinned ? "Unpin window" : "Pin on top"}>
+              📌
+            </button>
             <button className={`focus-btn${focusMode ? " active" : ""}`} onClick={toggleFocus} title={focusMode ? "Exit Focus" : "Focus Mode"}>
               {focusMode ? "✕ Exit Focus" : "⊙ Focus"}
             </button>

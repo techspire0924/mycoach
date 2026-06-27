@@ -13,6 +13,7 @@
     "core:window:allow-set-cursor-visible",
     "core:window:allow-set-size",
     "core:window:allow-set-min-size",
+    "core:window:allow-set-always-on-top",
     "opener:default",
     "sql:default",
     "sql:allow-execute",
