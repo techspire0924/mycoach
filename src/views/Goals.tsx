@@ -63,7 +63,11 @@ export default function Goals() {
   function goalProgress(goalId: string) {
     const ids = new Set(collectGoalIds(goalId));
     const all = tasks.filter(t => t.parent_goal_id && ids.has(t.parent_goal_id) && !t.parent_task_id);
-    const done = all.filter(t => t.status === "done").length;
+    const done = all.filter(t =>
+      t.task_type === "recurring"
+        ? todayCompletions.includes(t.id)
+        : t.status === "done"
+    ).length;
     return { done, total: all.length, pct: all.length > 0 ? Math.round((done / all.length) * 100) : 0 };
   }
 
