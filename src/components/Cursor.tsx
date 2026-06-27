@@ -20,6 +20,8 @@ export default function Cursor() {
 
     function onDown() { clicking = true;  el.classList.add("click"); }
     function onUp()   { clicking = false; el.classList.remove("click"); }
+    function onEnter() { el.style.opacity = "1"; }
+    function onLeave() { el.style.opacity = "0"; }
 
     function tick() {
       el.style.transform = `translate(${mx - 6}px, ${my - 2 + (clicking ? 2 : 0)}px)`;
@@ -30,6 +32,8 @@ export default function Cursor() {
     document.addEventListener("mouseover", onOver);
     document.addEventListener("mousedown", onDown);
     document.addEventListener("mouseup",   onUp);
+    document.addEventListener("mouseenter", onEnter);
+    document.addEventListener("mouseleave", onLeave);
     raf = requestAnimationFrame(tick);
 
     return () => {
@@ -37,9 +41,11 @@ export default function Cursor() {
       document.removeEventListener("mouseover", onOver);
       document.removeEventListener("mousedown", onDown);
       document.removeEventListener("mouseup",   onUp);
+      document.removeEventListener("mouseenter", onEnter);
+      document.removeEventListener("mouseleave", onLeave);
       cancelAnimationFrame(raf);
     };
   }, []);
 
-  return <div ref={ref} className="cursor-emoji">👆</div>;
+  return <div ref={ref} className="cursor-emoji" style={{ opacity: 0 }}>👆</div>;
 }
