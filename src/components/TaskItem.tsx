@@ -30,21 +30,32 @@ function recurrenceLabel(task: Task): string {
 }
 
 export default function TaskItem({ task, subtasks = [], onEdit, completedToday, overdue }: Props) {
-  const { cycleTaskStatus, toggleRecurring, removeTask } = useStore();
+  const { cycleTaskStatus, toggleRecurring, removeTask, editTask } = useStore();
   const [expanded, setExpanded] = useState(false);
   const [addingSubtask, setAddingSubtask] = useState(false);
 
   const isRecurring = task.task_type === "recurring";
   const isDone = isRecurring ? !!completedToday : task.status === "done";
+  const isInProg = isRecurring ? (!completedToday && task.status === "in_progress") : task.status === "in_progress";
+
   const s = isRecurring
     ? (isDone
       ? { icon: "✓", cls: "checked", title: "Mark incomplete" }
-      : { icon: "",  cls: "",        title: "Mark complete for today" })
+      : isInProg
+      ? { icon: "◐", cls: "inprog",  title: "Mark done for today" }
+      : { icon: "",  cls: "",        title: "Start" })
     : (STATUS_CYCLE[task.status] ?? STATUS_CYCLE.todo);
 
-  function handleCheck() {
+  async function handleCheck() {
     if (isRecurring) {
-      toggleRecurring(task.id);
+      if (isDone) {
+        toggleRecurring(task.id);
+      } else if (isInProg) {
+        await toggleRecurring(task.id);
+        await editTask(task.id, { status: "todo" });
+      } else {
+        cycleTaskStatus(task.id, "todo"); // todo → in_progress
+      }
     } else {
       cycleTaskStatus(task.id, task.status);
     }

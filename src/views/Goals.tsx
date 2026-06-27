@@ -45,7 +45,7 @@ function EditGoalModal({ goal, onClose }: { goal: Goal; onClose: () => void }) {
 }
 
 export default function Goals() {
-  const { goals, tasks, removeGoal, completeGoal } = useStore();
+  const { goals, tasks, removeGoal, completeGoal, todayCompletions } = useStore();
   const [detailGoal, setDetailGoal] = useState<Goal | null>(null);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -140,7 +140,8 @@ export default function Goals() {
           </div>
         )}
         {goalTasks.map((t) => (
-          <TaskItem key={t.id} task={t} subtasks={subtasksOf(t.id)} onEdit={setEditingTask} />
+          <TaskItem key={t.id} task={t} subtasks={subtasksOf(t.id)} onEdit={setEditingTask}
+            completedToday={todayCompletions.includes(t.id)} />
         ))}
 
         {addingTask && (
