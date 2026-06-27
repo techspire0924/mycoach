@@ -66,7 +66,7 @@ export default function App() {
     setFocusMode(next);
     if (next) {
       await win.setMinSize(new LogicalSize(340, 400));
-      await win.setSize(new LogicalSize(340, 560));
+      await win.setSize(new LogicalSize(340, 720));
     } else {
       await win.setMinSize(new LogicalSize(900, 600));
       await win.setSize(new LogicalSize(1200, 800));
