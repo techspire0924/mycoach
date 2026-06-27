@@ -486,6 +486,33 @@ input, textarea, select { font-family: inherit; }
 }
 .topbar h2 { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
 .topbar-date { color: var(--text2); font-size: 12px; font-weight: 400; }
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+
+.focus-btn {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(124,58,237,0.35);
+  background: rgba(124,58,237,0.1);
+  color: var(--accent);
+  letter-spacing: 0.3px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.focus-btn:hover { background: rgba(124,58,237,0.2); border-color: rgba(124,58,237,0.6); }
+.focus-btn.active {
+  background: rgba(124,58,237,0.18);
+  border-color: rgba(124,58,237,0.5);
+  color: var(--accent2);
+}
+
+/* Focus mode — compact window, no sidebar */
+.layout.focus-mode .topbar {
+  padding: 0 16px;
+  justify-content: space-between;
+}
+.focus-title { font-size: 15px; font-weight: 700; }
+.layout.focus-mode .content { padding: 16px 18px; }
 
 /* ── Task item ── */
 .task-item {

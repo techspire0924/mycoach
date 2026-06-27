@@ -34,6 +34,8 @@ interface AppState {
   weeklySummary: WeeklySummary | null;
   todayCompletions: string[]; // task IDs completed today
   loading: boolean;
+  focusMode: boolean;
+  setFocusMode: (v: boolean) => void;
 
   setView: (v: View) => Promise<void>;
 
@@ -92,6 +94,8 @@ export const useStore = create<AppState>((set, get) => ({
   weeklySummary: null,
   todayCompletions: [],
   loading: false,
+  focusMode: false,
+  setFocusMode: (v) => set({ focusMode: v }),
 
   setView: async (v) => {
     set({ view: v });

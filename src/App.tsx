@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { LogicalSize } from "@tauri-apps/api/dpi";
 import twemoji from "twemoji";
 import { useStore } from "./store";
 import Sidebar from "./components/Sidebar";
@@ -24,7 +25,7 @@ const VIEW_TITLES: Record<string, string> = {
 };
 
 export default function App() {
-  const { view, loadAll, loading } = useStore();
+  const { view, loadAll, loading, focusMode, setFocusMode } = useStore();
   const [quickAdd, setQuickAdd] = useState(false);
 
   useEffect(() => {
@@ -58,22 +59,45 @@ export default function App() {
     return () => clearTimeout(id);
   }, [view, loading, quickAdd]);
 
+  const win = getCurrentWindow();
+
+  async function toggleFocus() {
+    const next = !focusMode;
+    setFocusMode(next);
+    if (next) {
+      await win.setMinSize(new LogicalSize(340, 400));
+      await win.setSize(new LogicalSize(340, 560));
+    } else {
+      await win.setMinSize(new LogicalSize(900, 600));
+      await win.setSize(new LogicalSize(1200, 800));
+    }
+  }
+
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long", month: "long", day: "numeric", year: "numeric",
   });
 
   return (
-    <div className="layout">
+    <div className={`layout${focusMode ? " focus-mode" : ""}`}>
       <Cursor />
-      <Sidebar onQuickAdd={() => setQuickAdd(true)} />
+      {!focusMode && <Sidebar onQuickAdd={() => setQuickAdd(true)} />}
       <main className="main">
         <div className="topbar" data-tauri-drag-region>
-          <h2>{VIEW_TITLES[view]}</h2>
-          <span className="topbar-date">{today}</span>
+          {focusMode
+            ? <h2 className="focus-title">☀️ Today</h2>
+            : <h2>{VIEW_TITLES[view]}</h2>}
+          <div className="topbar-right">
+            {!focusMode && <span className="topbar-date">{today}</span>}
+            <button className={`focus-btn${focusMode ? " active" : ""}`} onClick={toggleFocus} title={focusMode ? "Exit Focus" : "Focus Mode"}>
+              {focusMode ? "✕ Exit Focus" : "⊙ Focus"}
+            </button>
+          </div>
         </div>
         <div className="content">
           {loading ? (
             <div className="empty-state"><p>Loading...</p></div>
+          ) : focusMode ? (
+            <Today />
           ) : (
             <>
               {view === "inbox" && <Inbox />}

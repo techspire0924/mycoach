@@ -11,6 +11,8 @@
     "core:window:allow-start-dragging",
     "core:window:allow-set-effects",
     "core:window:allow-set-cursor-visible",
+    "core:window:allow-set-size",
+    "core:window:allow-set-min-size",
     "opener:default",
     "sql:default",
     "sql:allow-execute",
