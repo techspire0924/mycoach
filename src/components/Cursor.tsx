@@ -9,7 +9,7 @@ export default function Cursor() {
     let raf: number;
     const el = ref.current!;
 
-    function onMove(e: MouseEvent) { mx = e.clientX; my = e.clientY; }
+    function onMove(e: MouseEvent) { mx = e.clientX; my = e.clientY; el.style.opacity = "1"; }
 
     function onOver(e: MouseEvent) {
       const hit = (e.target as HTMLElement).closest(
@@ -20,7 +20,6 @@ export default function Cursor() {
 
     function onDown() { clicking = true;  el.classList.add("click"); }
     function onUp()   { clicking = false; el.classList.remove("click"); }
-    function onEnter() { el.style.opacity = "1"; }
     function onLeave() { el.style.opacity = "0"; }
 
     function tick() {
@@ -32,7 +31,6 @@ export default function Cursor() {
     document.addEventListener("mouseover", onOver);
     document.addEventListener("mousedown", onDown);
     document.addEventListener("mouseup",   onUp);
-    document.addEventListener("mouseenter", onEnter);
     document.addEventListener("mouseleave", onLeave);
     raf = requestAnimationFrame(tick);
 
@@ -41,7 +39,6 @@ export default function Cursor() {
       document.removeEventListener("mouseover", onOver);
       document.removeEventListener("mousedown", onDown);
       document.removeEventListener("mouseup",   onUp);
-      document.removeEventListener("mouseenter", onEnter);
       document.removeEventListener("mouseleave", onLeave);
       cancelAnimationFrame(raf);
     };
