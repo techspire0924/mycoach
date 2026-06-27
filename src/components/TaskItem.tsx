@@ -30,7 +30,7 @@ function recurrenceLabel(task: Task): string {
 }
 
 export default function TaskItem({ task, subtasks = [], onEdit, completedToday, overdue }: Props) {
-  const { cycleTaskStatus, toggleRecurring, removeTask, editTask } = useStore();
+  const { cycleTaskStatus, toggleRecurring, removeTask, editTask, todayCompletions } = useStore();
   const [expanded, setExpanded] = useState(false);
   const [addingSubtask, setAddingSubtask] = useState(false);
 
@@ -98,18 +98,35 @@ export default function TaskItem({ task, subtasks = [], onEdit, completedToday, 
               </button>
               {expanded && (
                 <div className="subtask-list">
-                  {subtasks.map((st) => (
-                    <div key={st.id} className="subtask-item">
-                      <button
-                        className={`subtask-check${st.status === "done" ? " checked" : st.status === "in_progress" ? " inprog" : ""}`}
-                        onClick={() => cycleTaskStatus(st.id, st.status)}
-                        title={STATUS_CYCLE[st.status]?.title}
-                      >
-                        {st.status === "done" ? "✓" : st.status === "in_progress" ? "◐" : ""}
-                      </button>
-                      <span className={`subtask-text${st.status === "done" ? " done" : ""}`}>{st.title}</span>
-                    </div>
-                  ))}
+                  {subtasks.map((st) => {
+                    const stIsRecurring = st.task_type === "recurring";
+                    const stDone = stIsRecurring ? todayCompletions.includes(st.id) : st.status === "done";
+                    const stInProg = stIsRecurring
+                      ? (!stDone && st.status === "in_progress")
+                      : st.status === "in_progress";
+                    const stCls = stDone ? " checked" : stInProg ? " inprog" : "";
+                    const stIcon = stDone ? "✓" : stInProg ? "◐" : "";
+
+                    async function handleStCheck() {
+                      if (stIsRecurring) {
+                        if (stDone) { toggleRecurring(st.id); }
+                        else if (stInProg) { await toggleRecurring(st.id); await editTask(st.id, { status: "todo" }); }
+                        else { cycleTaskStatus(st.id, "todo"); }
+                      } else {
+                        cycleTaskStatus(st.id, st.status);
+                      }
+                    }
+
+                    return (
+                      <div key={st.id} className="subtask-item">
+                        <button className={`subtask-check${stCls}`} onClick={handleStCheck}
+                          title={stDone ? "Mark incomplete" : stInProg ? "Mark done" : "Start"}>
+                          {stIcon}
+                        </button>
+                        <span className={`subtask-text${stDone ? " done" : ""}`}>{st.title}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </>

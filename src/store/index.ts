@@ -100,6 +100,7 @@ export const useStore = create<AppState>((set, get) => ({
   setView: async (v) => {
     set({ view: v });
     if (v === "weekly") await get().loadWeekly();
+    if (v === "goals") { await get().loadGoals(); await get().loadTasks(); await get().loadTodayCompletions(); }
     if (v === "tasks") { await get().loadTasks(); await get().loadTodayCompletions(); }
     if (v === "today") {
       await Promise.all([get().loadTasks(), get().loadTodayCompletions(), get().loadHabits()]);
@@ -126,7 +127,7 @@ export const useStore = create<AppState>((set, get) => ({
   cycleTaskStatus: async (id, currentStatus) => {
     const next = currentStatus === "todo" ? "in_progress" : currentStatus === "in_progress" ? "done" : "todo";
     await setTaskStatus(id, next);
-    await Promise.all([get().loadTasks(), get().loadInbox(), get().loadWeekly()]);
+    await Promise.all([get().loadTasks(), get().loadInbox(), get().loadWeekly(), get().loadTodayCompletions()]);
   },
 
   toggleRecurring: async (taskId) => {
