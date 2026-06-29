@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 
 export default function Cursor() {
   const ref = useRef<HTMLDivElement>(null);
@@ -44,5 +45,8 @@ export default function Cursor() {
     };
   }, []);
 
-  return <div ref={ref} className="cursor-emoji" style={{ opacity: 0 }}>👆</div>;
+  return createPortal(
+    <div ref={ref} className="cursor-emoji" style={{ opacity: 0 }}>👆</div>,
+    document.body
+  );
 }
