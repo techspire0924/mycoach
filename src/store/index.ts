@@ -157,7 +157,7 @@ export const useStore = create<AppState>((set, get) => ({
   loadHabits: async () => { set({ habits: await getHabits() }); },
   loadHabitLogs: async (habitId) => {
     const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 6);
+    weekAgo.setDate(weekAgo.getDate() - 89);
     const logs = await getHabitLogs(habitId, weekAgo.toISOString().split("T")[0]);
     set((s) => ({ habitLogs: { ...s.habitLogs, [habitId]: logs } }));
   },

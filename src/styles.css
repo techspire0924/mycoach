@@ -983,7 +983,28 @@ input, textarea, select { font-family: inherit; }
   animation: checkPop 0.25s ease;
   box-shadow: 0 2px 10px rgba(124,58,237,0.35);
 }
-
+.habit-weekly-toggle {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1.5px dashed rgba(124,58,237,0.3);
+  background: none;
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+.habit-weekly-toggle:hover { border-color: rgba(124,58,237,0.5); color: var(--text); background: rgba(124,58,237,0.06); }
+.habit-weekly-toggle.logged {
+  background: var(--grad);
+  border-color: transparent;
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 2px 10px rgba(124,58,237,0.35);
+  animation: checkPop 0.25s ease;
+}
 .habit-add-card {
   background: none;
   border: 2px dashed rgba(255,255,255,0.07);
