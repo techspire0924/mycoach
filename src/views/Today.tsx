@@ -9,8 +9,9 @@ const TODAY_DOW = new Date().getDay();
 
 function isRecurringToday(t: Task): boolean {
   if (t.task_type !== "recurring") return false;
-  if (t.status === "done") return false; // permanently finished
-  if (t.recurrence_end_date && TODAY > t.recurrence_end_date) return false;
+  if (t.status === "done") return false; // permanently finished — hide
+  // Overdue (past end date but not finished) — still show with flag
+  if (t.recurrence_end_date && TODAY > t.recurrence_end_date) return true;
   if (TODAY < t.created_at.slice(0, 10)) return false;
   if (t.recurrence_type === "daily") return true;
   if (t.recurrence_type === "workdays") return TODAY_DOW >= 1 && TODAY_DOW <= 5;
@@ -123,6 +124,7 @@ export default function Today() {
               subtasks={subtasksOf(t.id)}
               onEdit={setEditingTask}
               completedToday={completedSet.has(t.id)}
+              overdue={!!(t.recurrence_end_date && t.recurrence_end_date < TODAY)}
             />
           ))}
         </section>

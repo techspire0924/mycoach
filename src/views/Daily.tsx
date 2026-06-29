@@ -9,9 +9,9 @@ const TODAY_DOW = new Date().getDay(); // 0=Sun
 
 function showsToday(t: Task): boolean {
   if (t.task_type === "onetime") return t.status !== "done";
-  // Recurring: check permanently finished or expired
+  // Recurring: only hide permanently finished
   if (t.status === "done") return false;
-  if (t.recurrence_end_date && TODAY > t.recurrence_end_date) return false;
+  // Overdue (past end date but not finished) — still show with flag
   if (t.recurrence_type === "daily") return true;
   if (t.recurrence_type === "workdays") return TODAY_DOW >= 1 && TODAY_DOW <= 5;
   if (t.recurrence_type === "custom" && t.recurrence_days) {
@@ -102,6 +102,7 @@ export default function Daily() {
                 subtasks={subtasksOf(t.id)}
                 onEdit={setEditingTask}
                 completedToday={completedSet.has(t.id)}
+                overdue={t.task_type === "recurring" && !!(t.recurrence_end_date && t.recurrence_end_date < TODAY)}
               />
             ))}
           </div>
@@ -120,6 +121,7 @@ export default function Daily() {
               subtasks={subtasksOf(t.id)}
               onEdit={setEditingTask}
               completedToday={completedSet.has(t.id)}
+              overdue={t.task_type === "recurring" && !!(t.recurrence_end_date && t.recurrence_end_date < TODAY)}
             />
           ))}
         </div>
