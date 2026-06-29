@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { useStore } from "../store";
 import type { Task } from "../db/types";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 interface TriageState {
   task: Task;
@@ -10,6 +11,7 @@ export default function Inbox() {
   const { inboxTasks, addTask, removeTask, triageTask, goals, loadInbox } = useStore();
   const [input, setInput] = useState("");
   const [triage, setTriage] = useState<TriageState | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<Task | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function handleAdd() {
@@ -67,7 +69,7 @@ export default function Inbox() {
           <div className="inbox-item-dot" />
           <span className="inbox-item-text">{task.title}</span>
           <button className="triage-btn" onClick={() => setTriage({ task })}>Triage →</button>
-          <button className="delete-inbox-btn" onClick={() => removeTask(task.id)}>✕</button>
+          <button className="delete-inbox-btn" onClick={() => setConfirmDelete(task)}>✕</button>
         </div>
       ))}
 
@@ -90,7 +92,7 @@ export default function Inbox() {
                   <span>Assign to this goal</span>
                 </button>
               ))}
-              <button className="triage-opt danger" onClick={() => handleTriageTo(triage.task, "delete")}>
+              <button className="triage-opt danger" onClick={() => setConfirmDelete(triage.task)}>
                 🗑 Delete
                 <span>Remove from inbox</span>
               </button>
@@ -100,6 +102,13 @@ export default function Inbox() {
             </div>
           </div>
         </div>
+      )}
+      {confirmDelete && (
+        <ConfirmDialog
+          message={`Delete "${confirmDelete.title}"?`}
+          onConfirm={() => { const t = confirmDelete; setConfirmDelete(null); setTriage(null); removeTask(t.id); loadInbox(); }}
+          onCancel={() => setConfirmDelete(null)}
+        />
       )}
     </>
   );

@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { Task } from "../db/types";
 import { useStore } from "../store";
 import AddTaskModal from "./AddTaskModal";
+import ConfirmDialog from "./ConfirmDialog";
 
 interface Props {
   task: Task;
@@ -34,6 +35,7 @@ export default function TaskItem({ task, subtasks = [], onEdit, completedToday, 
   const { cycleTaskStatus, toggleRecurring, removeTask, editTask, todayCompletions } = useStore();
   const [expanded, setExpanded] = useState(false);
   const [addingSubtask, setAddingSubtask] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const isRecurring = task.task_type === "recurring";
 
@@ -176,7 +178,7 @@ export default function TaskItem({ task, subtasks = [], onEdit, completedToday, 
           {onEdit && !isFinished && (
             <button className="icon-btn" onClick={() => onEdit(task)} title="Edit">✏️</button>
           )}
-          <button className="icon-btn danger" onClick={() => removeTask(task.id)} title="Delete">🗑</button>
+          <button className="icon-btn danger" onClick={() => setConfirmDelete(true)} title="Delete">🗑</button>
         </div>
       </div>
       {addingSubtask && (
@@ -184,6 +186,13 @@ export default function TaskItem({ task, subtasks = [], onEdit, completedToday, 
           onClose={() => setAddingSubtask(false)}
           defaultParentTaskId={task.id}
           defaultGoalId={task.parent_goal_id ?? undefined}
+        />
+      )}
+      {confirmDelete && (
+        <ConfirmDialog
+          message={`Delete "${task.title}"?`}
+          onConfirm={() => { setConfirmDelete(false); removeTask(task.id); }}
+          onCancel={() => setConfirmDelete(false)}
         />
       )}
     </>

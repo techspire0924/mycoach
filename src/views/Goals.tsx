@@ -4,6 +4,8 @@ import type { Goal, Task } from "../db/types";
 import TaskItem from "../components/TaskItem";
 import AddTaskModal from "../components/AddTaskModal";
 import AddGoalModal from "../components/AddGoalModal";
+import ConfirmDialog from "../components/ConfirmDialog";
+
 function EditGoalModal({ goal, onClose }: { goal: Goal; onClose: () => void }) {
   const { editGoal } = useStore();
   const [title, setTitle] = useState(goal.title);
@@ -58,6 +60,7 @@ export default function Goals() {
   const [addingTask, setAddingTask] = useState(false);
   const [addingGoal, setAddingGoal] = useState(false);
   const [addingSubGoal, setAddingSubGoal] = useState(false);
+  const [confirmDeleteGoal, setConfirmDeleteGoal] = useState(false);
 
   function collectGoalIds(goalId: string): string[] {
     const ids = [goalId];
@@ -120,7 +123,7 @@ export default function Goals() {
                 Mark Complete
               </button>
             )}
-            <button className="btn btn-danger" style={{ fontSize: 13 }} onClick={() => removeGoal(currentGoal.id).then(() => setDetailGoal(null))}>
+            <button className="btn btn-danger" style={{ fontSize: 13 }} onClick={() => setConfirmDeleteGoal(true)}>
               Delete Goal
             </button>
           </div>
@@ -192,6 +195,13 @@ export default function Goals() {
         )}
         {addingSubGoal && (
           <AddGoalModal onClose={() => setAddingSubGoal(false)} defaultParentId={currentGoal.id} />
+        )}
+        {confirmDeleteGoal && (
+          <ConfirmDialog
+            message={`Delete "${currentGoal.title}"?`}
+            onConfirm={() => { setConfirmDeleteGoal(false); removeGoal(currentGoal.id).then(() => setDetailGoal(null)); }}
+            onCancel={() => setConfirmDeleteGoal(false)}
+          />
         )}
       </>
     );
