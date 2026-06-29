@@ -752,8 +752,9 @@ input, textarea, select { font-family: inherit; }
 .goal-card:hover::after { opacity: 1; }
 .goal-card-title { font-size: 15px; font-weight: 600; line-height: 1.35; margin-bottom: 4px; }
 .goal-card-date { font-size: 11px; color: var(--text2); font-weight: 400; }
-.goal-card-bar { height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; margin: 14px 0 10px; overflow: hidden; }
+.goal-card-bar { height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; margin: 14px 0 10px; overflow: hidden; display: flex; }
 .goal-card-bar-fill { height: 100%; border-radius: 2px; background: var(--grad); animation: progressGrow 0.8s ease both; }
+.goal-card-bar-fill--inprog { background: var(--inprog); animation: none; }
 .goal-card-stats { display: flex; gap: 12px; font-size: 12px; color: var(--text2); font-weight: 400; }
 .goal-card-add {
   border-style: dashed;
@@ -982,6 +983,7 @@ input, textarea, select { font-family: inherit; }
   animation: checkPop 0.25s ease;
   box-shadow: 0 2px 10px rgba(124,58,237,0.35);
 }
+
 .habit-add-card {
   background: none;
   border: 2px dashed rgba(255,255,255,0.07);
@@ -1467,8 +1469,9 @@ input, textarea, select { font-family: inherit; }
 .subgoal-item-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
 .subgoal-item-title { font-size: 14px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .subgoal-item-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-.subgoal-bar { width: 80px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.subgoal-bar { width: 80px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; display: flex; }
 .subgoal-bar-fill { height: 100%; background: var(--grad); border-radius: 2px; transition: width 0.3s; }
+.subgoal-bar-fill--inprog { background: var(--inprog); }
 .subgoal-pct { font-size: 12px; color: var(--text2); font-weight: 600; width: 32px; text-align: right; }
 
 /* ── Calendar ── */

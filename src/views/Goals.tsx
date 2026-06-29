@@ -4,7 +4,6 @@ import type { Goal, Task } from "../db/types";
 import TaskItem from "../components/TaskItem";
 import AddTaskModal from "../components/AddTaskModal";
 import AddGoalModal from "../components/AddGoalModal";
-
 function EditGoalModal({ goal, onClose }: { goal: Goal; onClose: () => void }) {
   const { editGoal } = useStore();
   const [title, setTitle] = useState(goal.title);
@@ -81,7 +80,12 @@ export default function Goals() {
       const overdueUnfinished = !!t.recurrence_end_date && t.recurrence_end_date < TODAY;
       return overdueUnfinished || t.status === "in_progress" || todayCompletions.includes(t.id);
     }).length;
-    return { done, inProgress, total: all.length, pct: all.length > 0 ? Math.round(((done + inProgress * 0.5) / all.length) * 100) : 0 };
+    const n = all.length;
+    return {
+      done, inProgress, total: n,
+      pct: n > 0 ? Math.round((done / n) * 100) : 0,
+      inProgressPct: n > 0 ? Math.round((inProgress / n) * 100) : 0,
+    };
   }
 
   if (detailGoal) {
@@ -137,6 +141,7 @@ export default function Goals() {
                     <div className="subgoal-item-right">
                       <div className="subgoal-bar">
                         <div className="subgoal-bar-fill" style={{ width: `${sp.pct}%` }} />
+                        {sp.inProgressPct > 0 && <div className="subgoal-bar-fill subgoal-bar-fill--inprog" style={{ width: `${sp.inProgressPct}%` }} />}
                       </div>
                       <span className="subgoal-pct">{sp.pct}%</span>
                     </div>
@@ -210,7 +215,7 @@ export default function Goals() {
 
       <div className="goals-grid">
         {topGoals.map((g) => {
-          const { done, inProgress, total, pct } = goalProgress(g.id);
+          const { done, inProgress, total, pct, inProgressPct } = goalProgress(g.id);
           const subGoals = goals.filter((sg) => sg.parent_goal_id === g.id);
           return (
             <div key={g.id} className="goal-card" onClick={() => setDetailGoal(g)}>
@@ -227,6 +232,7 @@ export default function Goals() {
               </div>
               <div className="goal-card-bar">
                 <div className="goal-card-bar-fill" style={{ width: `${pct}%` }} />
+                {inProgressPct > 0 && <div className="goal-card-bar-fill goal-card-bar-fill--inprog" style={{ width: `${inProgressPct}%` }} />}
               </div>
               <div className="goal-card-stats">
                 <span>📋 {total} tasks</span>
