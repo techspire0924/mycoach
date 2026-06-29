@@ -44,6 +44,11 @@ function EditGoalModal({ goal, onClose }: { goal: Goal; onClose: () => void }) {
   );
 }
 
+const TODAY = new Date().toISOString().split("T")[0];
+function isRecurringExpired(t: { task_type: string; recurrence_end_date?: string | null }) {
+  return t.task_type === "recurring" && !!t.recurrence_end_date && t.recurrence_end_date < TODAY;
+}
+
 export default function Goals() {
   const { goals, tasks, removeGoal, completeGoal, todayCompletions } = useStore();
   const [detailGoal, setDetailGoal] = useState<Goal | null>(null);
@@ -64,12 +69,15 @@ export default function Goals() {
     const ids = new Set(collectGoalIds(goalId));
     const all = tasks.filter(t => t.parent_goal_id && ids.has(t.parent_goal_id) && !t.parent_task_id);
     const done = all.filter(t =>
-      t.task_type === "recurring" ? todayCompletions.includes(t.id) : t.status === "done"
+      isRecurringExpired(t) ||
+      (t.task_type === "recurring" ? todayCompletions.includes(t.id) : t.status === "done")
     ).length;
     const inProgress = all.filter(t =>
-      t.task_type === "recurring"
-        ? (t.status === "in_progress" && !todayCompletions.includes(t.id))
-        : t.status === "in_progress"
+      !isRecurringExpired(t) && (
+        t.task_type === "recurring"
+          ? (t.status === "in_progress" && !todayCompletions.includes(t.id))
+          : t.status === "in_progress"
+      )
     ).length;
     return { done, inProgress, total: all.length, pct: all.length > 0 ? Math.round(((done + inProgress * 0.5) / all.length) * 100) : 0 };
   }
@@ -77,7 +85,9 @@ export default function Goals() {
   if (detailGoal) {
     // Refresh detailGoal from store in case it was edited
     const currentGoal = goals.find((g) => g.id === detailGoal.id) ?? detailGoal;
-    const goalTasks = tasks.filter((t) => t.parent_goal_id === currentGoal.id && !t.parent_task_id);
+    const allGoalTasks = tasks.filter((t) => t.parent_goal_id === currentGoal.id && !t.parent_task_id);
+    const goalTasks = allGoalTasks.filter(t => !isRecurringExpired(t));
+    const expiredTasks = allGoalTasks.filter(t => isRecurringExpired(t));
     const subGoals = goals.filter((g) => g.parent_goal_id === currentGoal.id);
     const subtasksOf = (id: string) => tasks.filter((t) => t.parent_task_id === id);
     const { done, inProgress, total, pct } = goalProgress(currentGoal.id);
@@ -150,6 +160,19 @@ export default function Goals() {
           <TaskItem key={t.id} task={t} subtasks={subtasksOf(t.id)} onEdit={setEditingTask}
             completedToday={todayCompletions.includes(t.id)} />
         ))}
+
+        {expiredTasks.length > 0 && (
+          <div style={{ marginTop: 16 }}>
+            <div className="today-section-header" style={{ marginBottom: 8 }}>
+              <span className="today-section-title">Ended Recurring</span>
+              <span className="today-section-count">{expiredTasks.length}</span>
+            </div>
+            {expiredTasks.map((t) => (
+              <TaskItem key={t.id} task={t} subtasks={subtasksOf(t.id)} onEdit={setEditingTask}
+                completedToday={false} />
+            ))}
+          </div>
+        )}
 
         {addingTask && (
           <AddTaskModal onClose={() => setAddingTask(false)} defaultGoalId={currentGoal.id} />
