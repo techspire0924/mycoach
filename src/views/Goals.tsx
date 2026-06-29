@@ -70,17 +70,17 @@ export default function Goals() {
   function goalProgress(goalId: string) {
     const ids = new Set(collectGoalIds(goalId));
     const all = tasks.filter(t => t.parent_goal_id && ids.has(t.parent_goal_id) && !t.parent_task_id);
-    const done = all.filter(t =>
-      isRecurringExpired(t) ||
-      (t.task_type === "recurring" ? todayCompletions.includes(t.id) : t.status === "done")
-    ).length;
-    const inProgress = all.filter(t =>
-      !isRecurringExpired(t) && (
-        t.task_type === "recurring"
-          ? (t.status === "in_progress" && !todayCompletions.includes(t.id))
-          : t.status === "in_progress"
-      )
-    ).length;
+    const done = all.filter(t => {
+      if (t.task_type !== "recurring") return t.status === "done";
+      return t.status === "done"; // only permanently finished counts as done
+    }).length;
+    const inProgress = all.filter(t => {
+      if (t.task_type !== "recurring") return t.status === "in_progress";
+      if (t.status === "done") return false; // finished
+      // overdue-unfinished OR actively in_progress OR completed today counts as in progress
+      const overdueUnfinished = !!t.recurrence_end_date && t.recurrence_end_date < TODAY;
+      return overdueUnfinished || t.status === "in_progress" || todayCompletions.includes(t.id);
+    }).length;
     return { done, inProgress, total: all.length, pct: all.length > 0 ? Math.round(((done + inProgress * 0.5) / all.length) * 100) : 0 };
   }
 
