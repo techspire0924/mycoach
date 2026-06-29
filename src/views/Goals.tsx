@@ -45,8 +45,10 @@ function EditGoalModal({ goal, onClose }: { goal: Goal; onClose: () => void }) {
 }
 
 const TODAY = new Date().toISOString().split("T")[0];
-function isRecurringExpired(t: { task_type: string; recurrence_end_date?: string | null }) {
-  return t.task_type === "recurring" && !!t.recurrence_end_date && t.recurrence_end_date < TODAY;
+function isRecurringExpired(t: { task_type: string; status: string; recurrence_end_date?: string | null }) {
+  if (t.task_type !== "recurring") return false;
+  if (t.status === "done") return true; // permanently finished
+  return !!t.recurrence_end_date && t.recurrence_end_date < TODAY;
 }
 
 export default function Goals() {

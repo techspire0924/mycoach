@@ -18,6 +18,7 @@ const STATUS_CYCLE: Record<string, { next: string; icon: string; cls: string; ti
 };
 
 const DAY_NAMES = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+const TODAY = new Date().toISOString().split("T")[0];
 
 function recurrenceLabel(task: Task): string {
   if (task.recurrence_type === "daily") return "↻ Daily";
@@ -35,11 +36,23 @@ export default function TaskItem({ task, subtasks = [], onEdit, completedToday, 
   const [addingSubtask, setAddingSubtask] = useState(false);
 
   const isRecurring = task.task_type === "recurring";
-  const isDone = isRecurring ? !!completedToday : task.status === "done";
-  const isInProg = isRecurring ? (!completedToday && task.status === "in_progress") : task.status === "in_progress";
+
+  // Permanently finished recurring task (user clicked FINISH)
+  const isFinished = isRecurring && task.status === "done";
+
+  // Recurring task whose end date passed but not yet finished
+  const isExpiredUnfinished = isRecurring && !isFinished &&
+    !!task.recurrence_end_date && task.recurrence_end_date < TODAY;
+
+  const isDone = isFinished || (isRecurring ? !!completedToday : task.status === "done");
+  const isInProg = !isFinished && (isRecurring
+    ? (!completedToday && task.status === "in_progress")
+    : task.status === "in_progress");
 
   const s = isRecurring
-    ? (isDone
+    ? (isFinished
+      ? { icon: "✓", cls: "checked", title: "Finished" }
+      : isDone
       ? { icon: "✓", cls: "checked", title: "Mark incomplete" }
       : isInProg
       ? { icon: "◐", cls: "inprog",  title: "Mark done for today" }
@@ -47,6 +60,7 @@ export default function TaskItem({ task, subtasks = [], onEdit, completedToday, 
     : (STATUS_CYCLE[task.status] ?? STATUS_CYCLE.todo);
 
   async function handleCheck() {
+    if (isFinished) return; // read-only
     if (isRecurring) {
       if (isDone) {
         toggleRecurring(task.id);
@@ -54,30 +68,47 @@ export default function TaskItem({ task, subtasks = [], onEdit, completedToday, 
         await toggleRecurring(task.id);
         await editTask(task.id, { status: "todo" });
       } else {
-        cycleTaskStatus(task.id, "todo"); // todo → in_progress
+        cycleTaskStatus(task.id, "todo");
       }
     } else {
       cycleTaskStatus(task.id, task.status);
     }
   }
 
+  async function handleFinish() {
+    await editTask(task.id, { status: "done" });
+  }
+
+  const itemCls = [
+    "task-item",
+    isDone ? " done" : "",
+    overdue ? " overdue" : "",
+    isExpiredUnfinished ? " recurring-overdue" : "",
+    isFinished ? " recurring-finished" : "",
+  ].join("");
+
   return (
     <>
-      <div className={`task-item${isDone ? " done" : ""}${overdue ? " overdue" : ""}`}>
+      <div className={itemCls}>
         <button
           className={`task-check${s.cls ? ` ${s.cls}` : ""}`}
           onClick={handleCheck}
+          disabled={isFinished}
           title={s.title}
         >
           {s.icon}
         </button>
         <div className="task-body">
-          <div className="task-title">{task.title}</div>
+          <div className="task-title">
+            {task.title}
+            {isExpiredUnfinished && <span className="recur-expired-flag"> ⚑ Overdue</span>}
+            {isFinished && <span className="recur-finished-label"> · Finished</span>}
+          </div>
           <div className="task-meta">
             {task.is_urgent === 1 && <span className="tag tag-urgent">Urgent</span>}
             {!isRecurring && task.status === "in_progress" && <span className="tag tag-inprogress">In Progress</span>}
-            {isDone && <span className="tag tag-done">Done</span>}
-            {isRecurring && (
+            {isDone && !isFinished && <span className="tag tag-done">Done</span>}
+            {isRecurring && !isFinished && (
               <span className="tag tag-recur">{recurrenceLabel(task)}</span>
             )}
             {!isRecurring && task.due_date && (
@@ -100,14 +131,16 @@ export default function TaskItem({ task, subtasks = [], onEdit, completedToday, 
                 <div className="subtask-list">
                   {subtasks.map((st) => {
                     const stIsRecurring = st.task_type === "recurring";
-                    const stDone = stIsRecurring ? todayCompletions.includes(st.id) : st.status === "done";
-                    const stInProg = stIsRecurring
+                    const stFinished = stIsRecurring && st.status === "done";
+                    const stDone = stFinished || (stIsRecurring ? todayCompletions.includes(st.id) : st.status === "done");
+                    const stInProg = !stFinished && (stIsRecurring
                       ? (!stDone && st.status === "in_progress")
-                      : st.status === "in_progress";
+                      : st.status === "in_progress");
                     const stCls = stDone ? " checked" : stInProg ? " inprog" : "";
                     const stIcon = stDone ? "✓" : stInProg ? "◐" : "";
 
                     async function handleStCheck() {
+                      if (stFinished) return;
                       if (stIsRecurring) {
                         if (stDone) { toggleRecurring(st.id); }
                         else if (stInProg) { await toggleRecurring(st.id); await editTask(st.id, { status: "todo" }); }
@@ -120,6 +153,7 @@ export default function TaskItem({ task, subtasks = [], onEdit, completedToday, 
                     return (
                       <div key={st.id} className="subtask-item">
                         <button className={`subtask-check${stCls}`} onClick={handleStCheck}
+                          disabled={stFinished}
                           title={stDone ? "Mark incomplete" : stInProg ? "Mark done" : "Start"}>
                           {stIcon}
                         </button>
@@ -133,8 +167,13 @@ export default function TaskItem({ task, subtasks = [], onEdit, completedToday, 
           )}
         </div>
         <div className="task-actions">
-          <button className="icon-btn" onClick={() => setAddingSubtask(true)} title="Add subtask">⊕</button>
-          {onEdit && (
+          {isRecurring && !isFinished && (
+            <button className="icon-btn finish-btn" onClick={handleFinish} title="Finish recurring task permanently">
+              ✔ Finish
+            </button>
+          )}
+          {!isFinished && <button className="icon-btn" onClick={() => setAddingSubtask(true)} title="Add subtask">⊕</button>}
+          {onEdit && !isFinished && (
             <button className="icon-btn" onClick={() => onEdit(task)} title="Edit">✏️</button>
           )}
           <button className="icon-btn danger" onClick={() => removeTask(task.id)} title="Delete">🗑</button>

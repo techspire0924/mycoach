@@ -1377,6 +1377,31 @@ input, textarea, select { font-family: inherit; }
 }
 
 /* Overdue task highlight */
+/* Recurring task — end date exceeded, not yet finished */
+.task-item.recurring-overdue {
+  border-color: rgba(245,158,11,0.4);
+  background: rgba(245,158,11,0.04);
+}
+.task-item.recurring-overdue:hover { border-color: rgba(245,158,11,0.65); }
+.recur-expired-flag { font-size: 11px; font-weight: 600; color: #f59e0b; margin-left: 6px; }
+
+/* Recurring task — permanently finished */
+.task-item.recurring-finished { opacity: 0.5; }
+.task-item.recurring-finished .task-title { color: var(--text2); }
+.recur-finished-label { font-size: 11px; color: var(--text2); font-weight: 400; }
+
+/* Finish button */
+.finish-btn {
+  font-size: 11px !important;
+  padding: 2px 7px !important;
+  border-radius: 4px !important;
+  background: rgba(16,185,129,0.12) !important;
+  border: 1px solid rgba(16,185,129,0.3) !important;
+  color: #10b981 !important;
+  white-space: nowrap;
+}
+.finish-btn:hover { background: rgba(16,185,129,0.22) !important; }
+
 .task-item.overdue {
   border-color: rgba(239,68,68,0.35);
   background: rgba(239,68,68,0.05);

@@ -9,6 +9,7 @@ const TODAY_DOW = new Date().getDay();
 
 function isRecurringToday(t: Task): boolean {
   if (t.task_type !== "recurring") return false;
+  if (t.status === "done") return false; // permanently finished
   if (t.recurrence_end_date && TODAY > t.recurrence_end_date) return false;
   if (TODAY < t.created_at.slice(0, 10)) return false;
   if (t.recurrence_type === "daily") return true;

@@ -9,7 +9,8 @@ const TODAY_DOW = new Date().getDay(); // 0=Sun
 
 function showsToday(t: Task): boolean {
   if (t.task_type === "onetime") return t.status !== "done";
-  // Recurring: check end date
+  // Recurring: check permanently finished or expired
+  if (t.status === "done") return false;
   if (t.recurrence_end_date && TODAY > t.recurrence_end_date) return false;
   if (t.recurrence_type === "daily") return true;
   if (t.recurrence_type === "workdays") return TODAY_DOW >= 1 && TODAY_DOW <= 5;
