@@ -9,7 +9,8 @@
     "build": "tsc && vite build",
     "test": "vitest run",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "release": "bash scripts/build-release.sh"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
