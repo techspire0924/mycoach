@@ -46,3 +46,17 @@ export interface HabitLog {
   logged_date: string;
   created_at: string;
 }
+
+export interface TaskStatusEvent {
+  id: string;
+  task_id: string;
+  from_status: TaskStatus | null;
+  to_status: TaskStatus;
+  occurred_at: string;
+  is_baseline: number;
+}
+
+export interface TaskCompletion {
+  task_id: string;
+  completed_date: string;
+}

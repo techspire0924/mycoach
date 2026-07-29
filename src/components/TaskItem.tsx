@@ -3,6 +3,7 @@ import type { Task } from "../db/types";
 import { useStore } from "../store";
 import AddTaskModal from "./AddTaskModal";
 import ConfirmDialog from "./ConfirmDialog";
+import { toLocalDateKey } from "../utils/date";
 
 interface Props {
   task: Task;
@@ -19,7 +20,7 @@ const STATUS_CYCLE: Record<string, { next: string; icon: string; cls: string; ti
 };
 
 const DAY_NAMES = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
-const TODAY = new Date().toISOString().split("T")[0];
+const TODAY = toLocalDateKey();
 
 function recurrenceLabel(task: Task): string {
   if (task.recurrence_type === "daily") return "↻ Daily";

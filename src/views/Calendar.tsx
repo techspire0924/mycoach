@@ -120,6 +120,7 @@ export default function Calendar() {
                   ds === today && "cal-day--today",
                   ds === selectedDate && "cal-day--selected",
                 ].filter(Boolean).join(" ")}
+                data-cursor="interactive"
                 onClick={() => selectDay(date)}
               >
                 <span className="cal-day-num">{date.getDate()}</span>
@@ -167,7 +168,7 @@ export default function Calendar() {
                 ds === selectedDate && "cal-week-col--selected",
               ].filter(Boolean).join(" ")}
             >
-              <div className="cal-week-header" onClick={() => selectDay(date)}>
+              <div className="cal-week-header" data-cursor="interactive" onClick={() => selectDay(date)}>
                 <span className="cal-week-dayname">{WEEKDAYS[i]}</span>
                 <span className="cal-week-daynum">{date.getDate()}</span>
               </div>

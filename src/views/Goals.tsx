@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useStore } from "../store";
 import type { Goal, Task } from "../db/types";
+import { toLocalDateKey } from "../utils/date";
 import TaskItem from "../components/TaskItem";
 import AddTaskModal from "../components/AddTaskModal";
 import AddGoalModal from "../components/AddGoalModal";
@@ -45,7 +46,7 @@ function EditGoalModal({ goal, onClose }: { goal: Goal; onClose: () => void }) {
   );
 }
 
-const TODAY = new Date().toISOString().split("T")[0];
+const TODAY = toLocalDateKey();
 function isRecurringExpired(t: { task_type: string; status: string; recurrence_end_date?: string | null }) {
   if (t.task_type !== "recurring") return false;
   if (t.status === "done") return true; // permanently finished
@@ -136,7 +137,7 @@ export default function Goals() {
               {subGoals.map((sg) => {
                 const sp = goalProgress(sg.id);
                 return (
-                  <div key={sg.id} className="subgoal-item" onClick={() => setDetailGoal(sg)}>
+                  <div key={sg.id} className="subgoal-item" data-cursor="interactive" onClick={() => setDetailGoal(sg)}>
                     <div className="subgoal-item-left">
                       <div className={`goal-status-dot ${sg.status === "completed" ? "dot-completed" : "dot-active"}`} />
                       <span className="subgoal-item-title">{sg.title}</span>
@@ -228,7 +229,7 @@ export default function Goals() {
           const { done, inProgress, total, pct, inProgressPct } = goalProgress(g.id);
           const subGoals = goals.filter((sg) => sg.parent_goal_id === g.id);
           return (
-            <div key={g.id} className="goal-card" onClick={() => setDetailGoal(g)}>
+            <div key={g.id} className="goal-card" data-cursor="interactive" onClick={() => setDetailGoal(g)}>
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
                 <div style={{ flex: 1 }}>
                   <div className="goal-card-title">{g.title}</div>
@@ -254,7 +255,7 @@ export default function Goals() {
             </div>
           );
         })}
-        <div className="goal-card goal-card-add" onClick={() => setAddingGoal(true)}>
+        <div className="goal-card goal-card-add" data-cursor="interactive" onClick={() => setAddingGoal(true)}>
           <span style={{ fontSize: 20 }}>+</span> Add Goal
         </div>
       </div>

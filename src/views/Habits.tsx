@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useStore } from "../store";
 import type { HabitLog } from "../db/types";
 import ConfirmDialog from "../components/ConfirmDialog";
+import { toLocalDateKey } from "../utils/date";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -14,7 +15,7 @@ function getCurrentWeekDays(): { label: string; date: string }[] {
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
-    return { label: DAYS[d.getDay()], date: d.toISOString().split("T")[0] };
+    return { label: DAYS[d.getDay()], date: toLocalDateKey(d) };
   });
 }
 
@@ -24,11 +25,11 @@ function computeStreak(logs: HabitLog[], frequency: "daily" | "weekly"): number 
 
   if (frequency === "daily") {
     const today = new Date();
-    const todayStr = today.toISOString().split("T")[0];
+    const todayStr = toLocalDateKey(today);
     const d = new Date(today);
     if (!logSet.has(todayStr)) d.setDate(d.getDate() - 1);
     let streak = 0;
-    while (logSet.has(d.toISOString().split("T")[0])) {
+    while (logSet.has(toLocalDateKey(d))) {
       streak++;
       d.setDate(d.getDate() - 1);
     }
@@ -44,7 +45,7 @@ function computeStreak(logs: HabitLog[], frequency: "daily" | "weekly"): number 
       for (let i = 0; i < 7; i++) {
         const d = new Date(mon);
         d.setDate(mon.getDate() + i);
-        if (logSet.has(d.toISOString().split("T")[0])) return true;
+        if (logSet.has(toLocalDateKey(d))) return true;
       }
       return false;
     };
@@ -58,6 +59,46 @@ function computeStreak(logs: HabitLog[], frequency: "daily" | "weekly"): number 
     }
     return streak;
   }
+}
+
+function HabitName({ name }: { name: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLSpanElement>(null);
+  const [isOverflowing, setIsOverflowing] = useState(false);
+
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const updateOverflow = () => {
+      const text = textRef.current;
+      if (!text) return;
+      setIsOverflowing(text.scrollWidth > container.clientWidth + 1);
+    };
+
+    updateOverflow();
+    const resizeObserver = new ResizeObserver(updateOverflow);
+    resizeObserver.observe(container);
+    document.fonts.ready.then(updateOverflow);
+
+    return () => resizeObserver.disconnect();
+  }, [name]);
+
+  return (
+    <div
+      ref={containerRef}
+      className={`habit-name${isOverflowing ? " habit-name--overflowing" : ""}`}
+      title={name}
+    >
+      <span ref={textRef} className="habit-name-static">{name}</span>
+      {isOverflowing && (
+        <div className="habit-name-track">
+          <span className="habit-name-text">{name}</span>
+          <span className="habit-name-text" aria-hidden="true">{name}</span>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function Habits() {
@@ -86,7 +127,7 @@ export default function Habits() {
     if (loggedDay) {
       await toggleHabit(habitId, loggedDay.date);
     } else {
-      const today = new Date().toISOString().split("T")[0];
+      const today = toLocalDateKey();
       await toggleHabit(habitId, today);
     }
   }
@@ -113,15 +154,15 @@ export default function Habits() {
           return (
             <div key={h.id} className="habit-card">
               <div className="habit-card-top">
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div className="habit-name">{h.name}</div>
+                <div className="habit-card-heading">
+                  <HabitName name={h.name} />
                   {streak > 0 && (
-                    <span style={{ fontSize: 12, color: "var(--accent)", fontWeight: 600 }}>
+                    <span className="habit-streak">
                       🔥 {streak}
                     </span>
                   )}
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div className="habit-card-actions">
                   <span className="habit-freq">{h.frequency}</span>
                   <button
                     style={{ background: "none", border: "none", color: "var(--text2)", fontSize: 13, cursor: "pointer" }}
