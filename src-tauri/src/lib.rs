@@ -15,6 +15,18 @@ pub fn run() {
             sql: include_str!("../migrations/002_recurring.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 3,
+            description: "add_performance_tracking",
+            sql: include_str!("../migrations/003_performance_tracking.sql"),
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 4,
+            description: "backfill_one_time_status_timestamps",
+            sql: include_str!("../migrations/004_backfill_one_time_status_timestamps.sql"),
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()

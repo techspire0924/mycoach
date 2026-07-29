@@ -4,7 +4,6 @@ import { LogicalSize } from "@tauri-apps/api/dpi";
 import twemoji from "twemoji";
 import { useStore } from "./store";
 import Sidebar from "./components/Sidebar";
-import Cursor from "./components/Cursor";
 import QuickAddModal from "./components/QuickAddModal";
 import Inbox from "./views/Inbox";
 import Tasks from "./views/Daily";
@@ -13,6 +12,7 @@ import Weekly from "./views/Weekly";
 import Goals from "./views/Goals";
 import Habits from "./views/Habits";
 import Calendar from "./views/Calendar";
+import Performance from "./views/Performance";
 
 const VIEW_TITLES: Record<string, string> = {
   inbox: "Inbox",
@@ -22,35 +22,37 @@ const VIEW_TITLES: Record<string, string> = {
   goals: "Goals",
   habits: "Habits",
   calendar: "Calendar",
+  performance: "Performance Tracker",
 };
 
+const NO_WINDOW_DRAG =
+  "button, a, input, select, textarea, label, [contenteditable], [role='button'], " +
+  "[data-cursor='interactive'], .task-item, .inbox-item, .habit-card, .week-stat, " +
+  ".modal, .modal-overlay, .cal-week-col, .cal-chip, .performance-page";
+
 export default function App() {
-  const { view, loadAll, loading, focusMode, setFocusMode } = useStore();
+  const { view, setView, loadAll, loading, focusMode, setFocusMode } = useStore();
   const [quickAdd, setQuickAdd] = useState(false);
   const [pinned, setPinned] = useState(false);
+  const isTauri = "__TAURI_INTERNALS__" in window;
+  const isPerformancePreview = import.meta.env.DEV &&
+    new URLSearchParams(window.location.search).get("preview") === "performance";
+  const win = isTauri ? getCurrentWindow() : null;
 
   useEffect(() => {
-    loadAll();
-    const win = getCurrentWindow();
-    win.clearEffects().catch(() => {});
-    win.setCursorVisible(false).catch(() => {});
-
-    const INTERACTIVE =
-      'button, a, input, select, textarea, [contenteditable], ' +
-      '.task-item, .goal-card, .nav-item, .inbox-item, .habit-card, ' +
-      '.subgoal-item, .cal-day, .cal-week-col, .cal-chip, ' +
-      '.week-stat, .modal, .modal-overlay, .quick-add-btn, ' +
-      '.task-check, .theme-btn, .titlebar-btn';
+    if (isPerformancePreview) setView("performance");
+    else loadAll();
+    win?.clearEffects().catch(() => {});
 
     function onMouseDown(e: MouseEvent) {
       if (e.button !== 0) return;
-      if (!(e.target as HTMLElement).closest(INTERACTIVE)) {
-        win.startDragging().catch(() => {});
+      if (!(e.target as HTMLElement).closest(NO_WINDOW_DRAG)) {
+        win?.startDragging().catch(() => {});
       }
     }
 
-    document.addEventListener('mousedown', onMouseDown);
-    return () => document.removeEventListener('mousedown', onMouseDown);
+    document.addEventListener("mousedown", onMouseDown);
+    return () => document.removeEventListener("mousedown", onMouseDown);
   }, []);
 
   useEffect(() => {
@@ -60,15 +62,16 @@ export default function App() {
     return () => clearTimeout(id);
   }, [view, loading, quickAdd]);
 
-  const win = getCurrentWindow();
-
   async function togglePin() {
+    if (!win) return;
     const next = !pinned;
     setPinned(next);
     await win.setAlwaysOnTop(next);
+    await win.setVisibleOnAllWorkspaces(next);
   }
 
   async function toggleFocus() {
+    if (!win) return;
     const next = !focusMode;
     setFocusMode(next);
     if (next) {
@@ -86,7 +89,6 @@ export default function App() {
 
   return (
     <div className={`layout${focusMode ? " focus-mode" : ""}`}>
-      <Cursor />
       {!focusMode && <Sidebar onQuickAdd={() => setQuickAdd(true)} />}
       <main className="main">
         <div className="topbar" data-tauri-drag-region>
@@ -108,6 +110,8 @@ export default function App() {
             <div className="empty-state"><p>Loading...</p></div>
           ) : focusMode ? (
             <Today />
+          ) : isPerformancePreview ? (
+            <Performance />
           ) : (
             <>
               {view === "inbox" && <Inbox />}
@@ -117,6 +121,7 @@ export default function App() {
               {view === "goals" && <Goals />}
               {view === "habits" && <Habits />}
               {view === "calendar" && <Calendar />}
+              {view === "performance" && <Performance />}
             </>
           )}
         </div>

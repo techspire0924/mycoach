@@ -29,6 +29,7 @@ MyCoach is a single-user productivity app that ties **goals**, **tasks**, and **
 - **Habits** — Mon–Sun calendar-week grid that resets automatically, with streak tracking for both daily and weekly habits
 - **Inbox** — frictionless capture, triage into a goal or discard later
 - **Calendar** / **Weekly Review** — zoom out and see the week or month at a glance
+- **Performance Tracker** — inspect one-time task lifecycle timing and calendar heatmaps for recurring tasks and habits
 - Frameless, transparent window with a custom cursor and gradient border — built to feel like an app, not a browser tab
 
 ## Tech stack
@@ -61,7 +62,7 @@ npm run tauri build
 ```
 src/
   views/       top-level pages (Today, Tasks, Goals, Habits, Inbox, Calendar, Weekly)
-  components/  shared UI (TaskItem, modals, Cursor, ConfirmDialog)
+  components/  shared UI (TaskItem, modals, ConfirmDialog)
   store/       Zustand store — single source of app state
   db/          SQLite schema + query functions, one module per entity
 src-tauri/     Rust shell, window config, SQL migrations

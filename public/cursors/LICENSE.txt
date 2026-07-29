@@ -1,0 +1,8 @@
+The finger cursor artwork is derived from Twemoji 14.0.2 (1f446.svg).
+
+Copyright 2020 Twitter, Inc and other contributors.
+Graphics licensed under CC-BY 4.0:
+https://creativecommons.org/licenses/by/4.0/
+
+Source:
+https://github.com/twitter/twemoji/blob/v14.0.2/assets/svg/1f446.svg

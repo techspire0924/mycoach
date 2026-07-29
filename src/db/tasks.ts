@@ -1,5 +1,6 @@
 import { getDb, generateId, now } from "./index";
 import type { Task, TaskStatus, TaskType, RecurrenceType } from "./types";
+import { toLocalDateKey } from "../utils/date";
 
 export async function getAllTasks(): Promise<Task[]> {
   const db = await getDb();
@@ -79,7 +80,7 @@ export async function deleteTask(id: string): Promise<void> {
 
 export async function getTodayCompletions(): Promise<string[]> {
   const db = await getDb();
-  const today = new Date().toISOString().split("T")[0];
+  const today = toLocalDateKey();
   const rows = await db.select<{ task_id: string }[]>(
     "SELECT task_id FROM task_completions WHERE completed_date = ?",
     [today]
@@ -89,7 +90,7 @@ export async function getTodayCompletions(): Promise<string[]> {
 
 export async function toggleTaskCompletion(taskId: string): Promise<void> {
   const db = await getDb();
-  const today = new Date().toISOString().split("T")[0];
+  const today = toLocalDateKey();
   const existing = await db.select<{ id: string }[]>(
     "SELECT id FROM task_completions WHERE task_id = ? AND completed_date = ?",
     [taskId, today]

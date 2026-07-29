@@ -7,8 +7,9 @@ import {
   getTodayCompletions, toggleTaskCompletion,
 } from "../db/tasks";
 import { getHabits, createHabit, deleteHabit, getHabitLogs, toggleHabitLog } from "../db/habits";
+import { toLocalDateKey } from "../utils/date";
 
-export type View = "inbox" | "today" | "tasks" | "weekly" | "goals" | "habits" | "calendar";
+export type View = "inbox" | "today" | "tasks" | "weekly" | "goals" | "habits" | "calendar" | "performance";
 export type Theme = "cosmic" | "arctic" | "midnight";
 
 export const THEMES: { id: Theme; name: string; dot1: string; dot2: string }[] = [
@@ -158,7 +159,7 @@ export const useStore = create<AppState>((set, get) => ({
   loadHabitLogs: async (habitId) => {
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 89);
-    const logs = await getHabitLogs(habitId, weekAgo.toISOString().split("T")[0]);
+    const logs = await getHabitLogs(habitId, toLocalDateKey(weekAgo));
     set((s) => ({ habitLogs: { ...s.habitLogs, [habitId]: logs } }));
   },
   addHabit: async (data) => { await createHabit(data); await get().loadHabits(); },

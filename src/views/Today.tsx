@@ -3,8 +3,9 @@ import { useStore } from "../store";
 import type { Task } from "../db/types";
 import TaskItem from "../components/TaskItem";
 import AddTaskModal from "../components/AddTaskModal";
+import { toLocalDateKey } from "../utils/date";
 
-const TODAY = new Date().toISOString().split("T")[0];
+const TODAY = toLocalDateKey();
 const TODAY_DOW = new Date().getDay();
 
 function isRecurringToday(t: Task): boolean {
@@ -21,12 +22,13 @@ function isRecurringToday(t: Task): boolean {
 }
 
 export default function Today() {
-  const { tasks, habits, habitLogs, todayCompletions, toggleHabit } = useStore();
+  const { tasks, goals, habits, habitLogs, todayCompletions, toggleHabit } = useStore();
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   const topLevel = tasks.filter(t => !t.parent_task_id);
   const subtasksOf = (id: string) => tasks.filter(t => t.parent_task_id === id);
   const completedSet = new Set(todayCompletions);
+  const goalMap = new Map(goals.map(goal => [goal.id, goal]));
 
   const overdue = topLevel.filter(t =>
     t.task_type === "onetime" && t.due_date && t.due_date < TODAY && t.status !== "done"
@@ -43,9 +45,49 @@ export default function Today() {
   );
   const recurringToday = topLevel.filter(t => isRecurringToday(t) && !completedSet.has(t.id));
 
-  const isEmpty = overdue.length === 0 && dueToday.length === 0 &&
-    inProgress.length === 0 && noDeadline.length === 0 &&
-    recurringToday.length === 0 && habits.length === 0;
+  const taskBuckets = [
+    { id: "overdue", title: "Overdue", icon: "🔴", tasks: overdue },
+    { id: "due-today", title: "Due Today", icon: "📅", tasks: dueToday },
+    { id: "in-progress", title: "In Progress", icon: "◐", tasks: inProgress },
+    { id: "no-deadline", title: "No Deadline", icon: "∞", tasks: noDeadline },
+    { id: "recurring", title: "Recurring", icon: "↻", tasks: recurringToday },
+  ];
+
+  const tasksByParent = new Map<string | null, Map<string, Task[]>>();
+  for (const bucket of taskBuckets) {
+    for (const task of bucket.tasks) {
+      // A task whose goal was removed belongs with the other standalone tasks.
+      const parentId = task.parent_goal_id && goalMap.has(task.parent_goal_id)
+        ? task.parent_goal_id
+        : null;
+      if (!tasksByParent.has(parentId)) tasksByParent.set(parentId, new Map());
+      const parentBuckets = tasksByParent.get(parentId)!;
+      if (!parentBuckets.has(bucket.id)) parentBuckets.set(bucket.id, []);
+      parentBuckets.get(bucket.id)!.push(task);
+    }
+  }
+
+  const orderedParentIds: (string | null)[] = [
+    ...goals.map(goal => goal.id).filter(id => tasksByParent.has(id)),
+    ...(tasksByParent.has(null) ? [null] : []),
+  ];
+
+  function goalPath(goalId: string): string[] {
+    const path: string[] = [];
+    const visited = new Set<string>();
+    let current = goalMap.get(goalId);
+
+    while (current && !visited.has(current.id)) {
+      visited.add(current.id);
+      path.unshift(current.title);
+      current = current.parent_goal_id ? goalMap.get(current.parent_goal_id) : undefined;
+    }
+
+    return path;
+  }
+
+  const visibleTaskCount = taskBuckets.reduce((sum, bucket) => sum + bucket.tasks.length, 0);
+  const isEmpty = visibleTaskCount === 0 && habits.length === 0;
 
   if (isEmpty) {
     return (
@@ -58,77 +100,61 @@ export default function Today() {
 
   return (
     <>
-      {overdue.length > 0 && (
-        <section className="today-section">
-          <div className="today-section-header today-section-header--overdue">
-            <span className="today-section-icon">🔴</span>
-            <span className="today-section-title">Overdue</span>
-            <span className="today-section-count">{overdue.length}</span>
-          </div>
-          {overdue.map(t => (
-            <TaskItem key={t.id} task={t} subtasks={subtasksOf(t.id)} onEdit={setEditingTask} overdue />
-          ))}
-        </section>
-      )}
+      {orderedParentIds.map(parentId => {
+        const parentBuckets = tasksByParent.get(parentId)!;
+        const groupCount = [...parentBuckets.values()].reduce((sum, groupTasks) => sum + groupTasks.length, 0);
+        const path = parentId ? goalPath(parentId) : [];
 
-      {dueToday.length > 0 && (
-        <section className="today-section">
-          <div className="today-section-header">
-            <span className="today-section-icon">📅</span>
-            <span className="today-section-title">Due Today</span>
-            <span className="today-section-count">{dueToday.length}</span>
-          </div>
-          {dueToday.map(t => (
-            <TaskItem key={t.id} task={t} subtasks={subtasksOf(t.id)} onEdit={setEditingTask} />
-          ))}
-        </section>
-      )}
+        return (
+          <section key={parentId ?? "standalone"} className="today-parent-group">
+            <div className="today-parent-header">
+              <span className="today-parent-icon">{parentId ? "🎯" : "📋"}</span>
+              <div className="today-parent-name">
+                {parentId
+                  ? path.map((name, index) => (
+                      <span key={`${name}-${index}`} className="today-parent-path-part">
+                        {index > 0 && <span className="today-parent-path-separator">/</span>}
+                        {name}
+                      </span>
+                    ))
+                  : "Standalone"}
+              </div>
+              <span className="today-parent-count">
+                {groupCount} {groupCount === 1 ? "item" : "items"}
+              </span>
+            </div>
 
-      {inProgress.length > 0 && (
-        <section className="today-section">
-          <div className="today-section-header">
-            <span className="today-section-icon">◐</span>
-            <span className="today-section-title">In Progress</span>
-            <span className="today-section-count">{inProgress.length}</span>
-          </div>
-          {inProgress.map(t => (
-            <TaskItem key={t.id} task={t} subtasks={subtasksOf(t.id)} onEdit={setEditingTask} />
-          ))}
-        </section>
-      )}
+            {taskBuckets.map(bucket => {
+              const groupTasks = parentBuckets.get(bucket.id) ?? [];
+              if (groupTasks.length === 0) return null;
 
-      {noDeadline.length > 0 && (
-        <section className="today-section">
-          <div className="today-section-header">
-            <span className="today-section-icon">∞</span>
-            <span className="today-section-title">No Deadline</span>
-            <span className="today-section-count">{noDeadline.length}</span>
-          </div>
-          {noDeadline.map(t => (
-            <TaskItem key={t.id} task={t} subtasks={subtasksOf(t.id)} onEdit={setEditingTask} />
-          ))}
-        </section>
-      )}
-
-      {recurringToday.length > 0 && (
-        <section className="today-section">
-          <div className="today-section-header">
-            <span className="today-section-icon">↻</span>
-            <span className="today-section-title">Recurring</span>
-            <span className="today-section-count">{recurringToday.length}</span>
-          </div>
-          {recurringToday.map(t => (
-            <TaskItem
-              key={t.id}
-              task={t}
-              subtasks={subtasksOf(t.id)}
-              onEdit={setEditingTask}
-              completedToday={completedSet.has(t.id)}
-              overdue={!!(t.recurrence_end_date && t.recurrence_end_date < TODAY)}
-            />
-          ))}
-        </section>
-      )}
+              return (
+                <div key={bucket.id} className={`today-parent-bucket today-parent-bucket--${bucket.id}`}>
+                  <div className="today-parent-bucket-header">
+                    <span>{bucket.icon}</span>
+                    <span>{bucket.title}</span>
+                    <span className="today-parent-bucket-count">{groupTasks.length}</span>
+                  </div>
+                  {groupTasks.map(task => (
+                    <TaskItem
+                      key={task.id}
+                      task={task}
+                      subtasks={subtasksOf(task.id)}
+                      onEdit={setEditingTask}
+                      completedToday={completedSet.has(task.id)}
+                      overdue={
+                        bucket.id === "overdue" ||
+                        (task.task_type === "recurring" &&
+                          !!(task.recurrence_end_date && task.recurrence_end_date < TODAY))
+                      }
+                    />
+                  ))}
+                </div>
+              );
+            })}
+          </section>
+        );
+      })}
 
       {habits.length > 0 && (
         <section className="today-section">

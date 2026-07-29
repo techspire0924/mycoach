@@ -3,8 +3,9 @@ import { useStore } from "../store";
 import type { Task } from "../db/types";
 import TaskItem from "../components/TaskItem";
 import AddTaskModal from "../components/AddTaskModal";
+import { toLocalDateKey } from "../utils/date";
 
-const TODAY = new Date().toISOString().split("T")[0];
+const TODAY = toLocalDateKey();
 const TODAY_DOW = new Date().getDay(); // 0=Sun
 
 function showsToday(t: Task): boolean {

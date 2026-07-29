@@ -1,5 +1,12 @@
+import { useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useStore, THEMES, type View } from "../store";
+import {
+  applyTransparency,
+  getSavedTransparency,
+  MAX_APP_TRANSPARENCY,
+  TRANSPARENCY_STEP,
+} from "../uiPreferences";
 
 const NAV: { id: View; icon: string; label: string; section?: string }[] = [
   { id: "inbox",    icon: "📥", label: "Inbox",    section: "Capture" },
@@ -8,23 +15,29 @@ const NAV: { id: View; icon: string; label: string; section?: string }[] = [
   { id: "weekly",   icon: "📅", label: "Weekly" },
   { id: "goals",    icon: "🎯", label: "Goals",    section: "Track" },
   { id: "habits",   icon: "🔁", label: "Habits" },
-  { id: "calendar", icon: "📆", label: "Calendar", section: "Review" },
+  { id: "performance", icon: "📈", label: "Performance", section: "Review" },
+  { id: "calendar", icon: "📆", label: "Calendar" },
 ];
 
 interface Props { onQuickAdd: () => void; }
 
 export default function Sidebar({ onQuickAdd }: Props) {
   const { view, setView, theme, setTheme } = useStore();
-  const win = getCurrentWindow();
+  const [transparency, setTransparency] = useState(getSavedTransparency);
+  const win = "__TAURI_INTERNALS__" in window ? getCurrentWindow() : null;
+
+  function updateTransparency(value: number) {
+    setTransparency(applyTransparency(value));
+  }
 
   return (
     <aside className="sidebar">
       {/* Window controls row — draggable, with macOS-style buttons */}
       <div className="sidebar-titlebar" data-tauri-drag-region>
         <div className="sidebar-titlebar-controls">
-          <button className="titlebar-btn titlebar-close"    onClick={() => win.close()}          title="Close" />
-          <button className="titlebar-btn titlebar-minimize" onClick={() => win.minimize()}       title="Minimize" />
-          <button className="titlebar-btn titlebar-maximize" onClick={() => win.toggleMaximize()} title="Maximize" />
+          <button className="titlebar-btn titlebar-close"    onClick={() => win?.close()}          title="Close" />
+          <button className="titlebar-btn titlebar-minimize" onClick={() => win?.minimize()}       title="Minimize" />
+          <button className="titlebar-btn titlebar-maximize" onClick={() => win?.toggleMaximize()} title="Maximize" />
         </div>
       </div>
 
@@ -62,6 +75,22 @@ export default function Sidebar({ onQuickAdd }: Props) {
               style={{ background: `linear-gradient(135deg, ${t.dot1}, ${t.dot2})` }}
             />
           ))}
+        </div>
+        <div className="transparency-control">
+          <div className="transparency-label">
+            <span>Transparency</span>
+            <span>{transparency}%</span>
+          </div>
+          <input
+            className="transparency-slider"
+            type="range"
+            min="0"
+            max={MAX_APP_TRANSPARENCY}
+            step={TRANSPARENCY_STEP}
+            value={transparency}
+            onChange={(e) => updateTransparency(Number(e.target.value))}
+            aria-label="Window transparency"
+          />
         </div>
         <button className="quick-add-btn" onClick={onQuickAdd}>+ Quick Add</button>
       </div>
