@@ -115,9 +115,18 @@ export function getPerformanceDemoSource(): PerformanceSource {
     }
   }
 
+  const finishedHabitCreated = addDays(today, -80);
+  const finishedHabitEnded = addDays(today, -20);
   const habits: Habit[] = [
-    { id: "habit-read", name: "Read for 20 minutes", frequency: "daily", created_at: timestamp(dailyHabitCreated) },
-    { id: "habit-review", name: "Weekly reflection", frequency: "weekly", created_at: timestamp(weeklyHabitCreated) },
+    { id: "habit-read", name: "Read for 20 minutes", frequency: "daily", created_at: timestamp(dailyHabitCreated), finished_at: null },
+    { id: "habit-review", name: "Weekly reflection", frequency: "weekly", created_at: timestamp(weeklyHabitCreated), finished_at: null },
+    {
+      id: "habit-cold-shower",
+      name: "Cold shower",
+      frequency: "daily",
+      created_at: timestamp(finishedHabitCreated),
+      finished_at: timestamp(finishedHabitEnded),
+    },
   ];
   const habitLogs: HabitLog[] = [];
   for (let date = dailyHabitCreated; date <= today; date = addDays(date, 1)) {
@@ -125,6 +134,16 @@ export function getPerformanceDemoSource(): PerformanceSource {
       habitLogs.push({
         id: `read-${date}`,
         habit_id: "habit-read",
+        logged_date: date,
+        created_at: timestamp(date),
+      });
+    }
+  }
+  for (let date = finishedHabitCreated; date <= finishedHabitEnded; date = addDays(date, 1)) {
+    if (parseDateKey(date).getDate() % 4 !== 0) {
+      habitLogs.push({
+        id: `cold-${date}`,
+        habit_id: "habit-cold-shower",
         logged_date: date,
         created_at: timestamp(date),
       });

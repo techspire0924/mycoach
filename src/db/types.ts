@@ -38,6 +38,7 @@ export interface Habit {
   name: string;
   frequency: HabitFrequency;
   created_at: string;
+  finished_at: string | null;
 }
 
 export interface HabitLog {

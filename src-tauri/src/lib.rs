@@ -27,6 +27,12 @@ pub fn run() {
             sql: include_str!("../migrations/004_backfill_one_time_status_timestamps.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 5,
+            description: "add_habit_finish",
+            sql: include_str!("../migrations/005_habit_finish.sql"),
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()

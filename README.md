@@ -1,73 +1,50 @@
-<p align="center">
-  <img src="public/mycoach-icon.png" width="96" alt="MyCoach icon" />
-</p>
-
+<p align="center"><img src="public/mycoach-web-icon.png" width="96" alt="MyCoach" /></p>
 <h1 align="center">MyCoach</h1>
 
-<p align="center">
-  A local-first desktop coach for goals, tasks, and habits — built with Tauri, React, and SQLite.
-</p>
-
-<p align="center">
-  <img alt="license" src="https://img.shields.io/badge/license-MIT-blue.svg" />
-  <img alt="tauri" src="https://img.shields.io/badge/Tauri-2-24C8DB?logo=tauri&logoColor=white" />
-  <img alt="react" src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white" />
-  <img alt="typescript" src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" />
-</p>
-
----
-
-## What it is
-
-MyCoach is a single-user productivity app that ties **goals**, **tasks**, and **habits** together instead of tracking them separately. Tasks roll up into goal progress, recurring tasks and habits share a calendar-aware streak model, and everything lives in a local SQLite database — no account, no server, no sync required.
+A private, single-owner web app for goals, tasks, habits, and performance history. One Mac hosts the app and SQLite database; your Windows, Mac, and Linux devices use the same data through a browser on your home network.
 
 ## Features
 
-- **Today** — focus view of what's due today, recurring tasks, and habit check-ins
-- **Tasks** — todo → in-progress → done workflow with subtasks and recurrence (daily / workdays / custom weekdays)
-- **Goals** — nest sub-goals, attach tasks, and watch a split progress bar (done vs. in-progress) fill in as work lands
-- **Habits** — Mon–Sun calendar-week grid that resets automatically, with streak tracking for both daily and weekly habits
-- **Inbox** — frictionless capture, triage into a goal or discard later
-- **Calendar** / **Weekly Review** — zoom out and see the week or month at a glance
-- **Performance Tracker** — inspect one-time task lifecycle timing and calendar heatmaps for recurring tasks and habits
-- Frameless, transparent window with a custom cursor and gradient border — built to feel like an app, not a browser tab
+- Today, Tasks, Inbox, nested Goals, Habits, Calendar, Weekly Review, and Performance.
+- One-time task lifecycle tracking, recurring task check-ins, and daily/weekly habit history.
+- Finish and reopen habits while preserving performance history.
+- Password-protected sessions, local HTTPS, and automatic refresh across devices.
+- Three themes, browser Focus Mode, and navigation for smaller windows.
+- Verified desktop database import, consistent SQLite backups, and restore tooling.
 
-## Tech stack
+The host must stay awake and reachable. Editing requires a connection; no offline writes are queued. Themes are saved per browser. Calendar dates use America/Chicago. This is a single-owner home-network app with no cloud service or account registration.
 
-| Layer | Choice |
-|---|---|
-| Shell | [Tauri 2](https://tauri.app) (Rust) |
-| UI | React 19 + TypeScript |
-| State | Zustand |
-| Storage | SQLite via `@tauri-apps/plugin-sql` |
-| Build | Vite |
+## Setup
 
-## Getting started
+Requires Node.js **24 LTS** with npm. LAN hosting additionally requires Caddy and certificate trust on each device.
 
-Requires [Node.js](https://nodejs.org) and the [Rust toolchain](https://www.rust-lang.org/tools/install) (Tauri's prerequisites: https://tauri.app/start/prerequisites/).
-
-```bash
-npm install
-npm run tauri dev
+```sh
+npm ci
+npm run build
+# Close the desktop app, then import before setup:
+npm run db:import -- "$HOME/Library/Application Support/com.a.mycoach/mycoach.db"
+npm run setup
 ```
 
-To build a release binary for your platform:
+For a fresh dataset, omit import. Follow [the deployment guide](deploy/README.md) for HTTPS, automatic startup, backups, recovery, and development. `npm run host:configure -- <reserved-LAN-IP> <absolute-caddy-path>` generates the host configuration.
 
-```bash
-npm run tauri build
-```
+## Architecture
 
-## Project layout
+React 19, TypeScript, Vite, and Zustand serve the browser UI. A Fastify API owns the local SQLite database through better-sqlite3. API routes validate input and enforce owner sessions; only Caddy is exposed to the LAN. Fonts and emoji assets are bundled locally.
 
-```
-src/
-  views/       top-level pages (Today, Tasks, Goals, Habits, Inbox, Calendar, Weekly)
-  components/  shared UI (TaskItem, modals, ConfirmDialog)
-  store/       Zustand store — single source of app state
-  db/          SQLite schema + query functions, one module per entity
-src-tauri/     Rust shell, window config, SQL migrations
+- `src/`: browser screens, components, state, and typed API clients.
+- `shared/`: shared API contracts and calendar rules.
+- `server/`: API, sessions, database migrations, backups, and local administration commands.
+- `deploy/`: operating instructions; `tests/`: browser acceptance tests.
+- `src-tauri/`: retained desktop source for reference and rollback; not part of the web build.
+
+```sh
+npm test
+npm run build
+npx playwright install chromium firefox webkit
+npm run test:e2e
 ```
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE). Bundled Twemoji graphics are licensed under [CC BY 4.0](public/emoji-LICENSE), attributed to Twitter and other contributors. Inter is distributed under the SIL Open Font License (see [public/inter-OFL.txt](public/inter-OFL.txt)). Cursor attribution is in `public/cursors/LICENSE.txt`.

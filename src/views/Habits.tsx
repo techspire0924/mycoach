@@ -1,13 +1,14 @@
+import MutationFeedback from "../components/MutationFeedback";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useStore } from "../store";
 import type { HabitLog } from "../db/types";
 import ConfirmDialog from "../components/ConfirmDialog";
-import { toLocalDateKey } from "../utils/date";
+import { toLocalDateKey, appCalendarDate, timestampDate } from "../utils/date";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function getCurrentWeekDays(): { label: string; date: string }[] {
-  const today = new Date();
+  const today = appCalendarDate();
   const day = today.getDay();
   const diff = day === 0 ? -6 : 1 - day;
   const monday = new Date(today);
@@ -24,7 +25,7 @@ function computeStreak(logs: HabitLog[], frequency: "daily" | "weekly"): number 
   const logSet = new Set(logs.map((l) => l.logged_date));
 
   if (frequency === "daily") {
-    const today = new Date();
+    const today = appCalendarDate();
     const todayStr = toLocalDateKey(today);
     const d = new Date(today);
     if (!logSet.has(todayStr)) d.setDate(d.getDate() - 1);
@@ -35,7 +36,7 @@ function computeStreak(logs: HabitLog[], frequency: "daily" | "weekly"): number 
     }
     return streak;
   } else {
-    const today = new Date();
+    const today = appCalendarDate();
     const day = today.getDay();
     const diff = day === 0 ? -6 : 1 - day;
     const weekMon = new Date(today);
@@ -101,13 +102,25 @@ function HabitName({ name }: { name: string }) {
   );
 }
 
+function formatFinished(timestamp: string): string {
+  return timestampDate(timestamp).toLocaleDateString("en-US", {
+    timeZone: "America/Chicago",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 export default function Habits() {
-  const { habits, habitLogs, loadHabitLogs, toggleHabit, addHabit, removeHabit } = useStore();
+  const { habits, habitLogs, loadHabitLogs, toggleHabit, addHabit, removeHabit, completeHabit, resumeHabit } = useStore();
   const [showAdd, setShowAdd] = useState(false);
   const [name, setName] = useState("");
   const [frequency, setFrequency] = useState<"daily" | "weekly">("daily");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [confirmFinishId, setConfirmFinishId] = useState<string | null>(null);
   const weekDays = getCurrentWeekDays();
+  const activeHabits = habits.filter((h) => !h.finished_at);
+  const finishedHabits = habits.filter((h) => h.finished_at);
 
   useEffect(() => {
     habits.forEach((h) => loadHabitLogs(h.id));
@@ -133,10 +146,13 @@ export default function Habits() {
   }
 
   async function handleAdd() {
+    try {
     if (!name.trim()) return;
     await addHabit({ name: name.trim(), frequency });
     setName("");
     setShowAdd(false);
+
+    } catch { /* Keep input open; the store displays the save error. */ }
   }
 
   return (
@@ -146,7 +162,7 @@ export default function Habits() {
       </p>
 
       <div className="habits-grid">
-        {habits.map((h) => {
+        {activeHabits.map((h) => {
           const logs = habitLogs[h.id] ?? [];
           const streak = computeStreak(logs, h.frequency);
           const doneThisWeek = isLoggedThisWeek(h.id);
@@ -165,10 +181,10 @@ export default function Habits() {
                 <div className="habit-card-actions">
                   <span className="habit-freq">{h.frequency}</span>
                   <button
-                    style={{ background: "none", border: "none", color: "var(--text2)", fontSize: 13, cursor: "pointer" }}
-                    onClick={() => setConfirmDeleteId(h.id)}
-                    title="Delete habit"
-                  >✕</button>
+                    className="habit-finish-btn"
+                    onClick={() => setConfirmFinishId(h.id)}
+                    title="Finish habit — keeps its performance history"
+                  >Finish</button>
                 </div>
               </div>
 
@@ -205,9 +221,39 @@ export default function Habits() {
         </button>
       </div>
 
+      {finishedHabits.length > 0 && (
+        <section className="habits-finished">
+          <div className="habits-finished-heading">
+            <span className="habits-finished-label">Finished</span>
+            <span className="habits-finished-count">{finishedHabits.length}</span>
+            <span className="habits-finished-hint">History stays in Performance</span>
+          </div>
+          <div className="habits-finished-list">
+            {finishedHabits.map((h) => {
+              const logs = habitLogs[h.id] ?? [];
+              return (
+                <div key={h.id} className="habit-finished-row">
+                  <span className="habit-finished-name" title={h.name}>{h.name}</span>
+                  <span className="habit-freq">{h.frequency}</span>
+                  <span className="habit-finished-meta">
+                    {logs.length} logged · finished {formatFinished(h.finished_at!)}
+                  </span>
+                  <button className="habit-reopen-btn" onClick={() => resumeHabit(h.id)}>Reopen</button>
+                  <button
+                    className="habit-delete-btn"
+                    onClick={() => setConfirmDeleteId(h.id)}
+                    title="Delete habit and its history"
+                  >✕</button>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {showAdd && (
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowAdd(false)}>
-          <div className="modal">
+          <div className="modal"><MutationFeedback />
             <h3>Add Habit</h3>
             <input
               className="modal-input"
@@ -228,11 +274,23 @@ export default function Habits() {
           </div>
         </div>
       )}
+      {confirmFinishId && (() => {
+        const habit = habits.find((h) => h.id === confirmFinishId);
+        return habit ? (
+          <ConfirmDialog
+            message={`Finish "${habit.name}"? It stops being tracked from today, and its performance history stays.`}
+            confirmLabel="Finish"
+            confirmVariant="primary"
+            onConfirm={() => { setConfirmFinishId(null); completeHabit(confirmFinishId); }}
+            onCancel={() => setConfirmFinishId(null)}
+          />
+        ) : null;
+      })()}
       {confirmDeleteId && (() => {
         const habit = habits.find((h) => h.id === confirmDeleteId);
         return habit ? (
           <ConfirmDialog
-            message={`Delete "${habit.name}"?`}
+            message={`Delete "${habit.name}"? Its logs and performance history are removed too.`}
             onConfirm={() => { setConfirmDeleteId(null); removeHabit(confirmDeleteId); }}
             onCancel={() => setConfirmDeleteId(null)}
           />

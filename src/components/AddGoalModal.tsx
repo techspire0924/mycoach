@@ -1,3 +1,4 @@
+import MutationFeedback from "./MutationFeedback";
 import { useState } from "react";
 import { useStore } from "../store";
 
@@ -14,6 +15,7 @@ export default function AddGoalModal({ onClose, defaultParentId }: Props) {
   const [parentGoalId, setParentGoalId] = useState(defaultParentId ?? "");
 
   async function handleSave() {
+    try {
     if (!title.trim()) return;
     await addGoal({
       title: title.trim(),
@@ -22,12 +24,14 @@ export default function AddGoalModal({ onClose, defaultParentId }: Props) {
       parent_goal_id: parentGoalId || undefined,
     });
     onClose();
+
+    } catch { /* Keep input open; the store displays the save error. */ }
   }
 
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal">
-        <h3>Add Goal</h3>
+        <h3>Add Goal</h3><MutationFeedback />
         <input
           className="modal-input"
           placeholder="Goal title..."

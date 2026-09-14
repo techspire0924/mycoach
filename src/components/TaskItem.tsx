@@ -20,7 +20,6 @@ const STATUS_CYCLE: Record<string, { next: string; icon: string; cls: string; ti
 };
 
 const DAY_NAMES = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
-const TODAY = toLocalDateKey();
 
 function recurrenceLabel(task: Task): string {
   if (task.recurrence_type === "daily") return "↻ Daily";
@@ -33,6 +32,7 @@ function recurrenceLabel(task: Task): string {
 }
 
 export default function TaskItem({ task, subtasks = [], onEdit, completedToday, overdue }: Props) {
+  const TODAY = toLocalDateKey();
   const { cycleTaskStatus, toggleRecurring, removeTask, editTask, todayCompletions } = useStore();
   const [expanded, setExpanded] = useState(false);
   const [addingSubtask, setAddingSubtask] = useState(false);
@@ -69,7 +69,6 @@ export default function TaskItem({ task, subtasks = [], onEdit, completedToday, 
         toggleRecurring(task.id);
       } else if (isInProg) {
         await toggleRecurring(task.id);
-        await editTask(task.id, { status: "todo" });
       } else {
         cycleTaskStatus(task.id, "todo");
       }
@@ -146,7 +145,7 @@ export default function TaskItem({ task, subtasks = [], onEdit, completedToday, 
                       if (stFinished) return;
                       if (stIsRecurring) {
                         if (stDone) { toggleRecurring(st.id); }
-                        else if (stInProg) { await toggleRecurring(st.id); await editTask(st.id, { status: "todo" }); }
+                        else if (stInProg) { await toggleRecurring(st.id); }
                         else { cycleTaskStatus(st.id, "todo"); }
                       } else {
                         cycleTaskStatus(st.id, st.status);

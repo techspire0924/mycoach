@@ -1,3 +1,4 @@
+import MutationFeedback from "../components/MutationFeedback";
 import { useState, useRef } from "react";
 import { useStore } from "../store";
 import type { Task } from "../db/types";
@@ -15,14 +16,18 @@ export default function Inbox() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function handleAdd() {
+    try {
     const title = input.trim();
     if (!title) return;
     await addTask({ title });
     setInput("");
     inputRef.current?.focus();
+
+    } catch { /* Keep input open; the store displays the save error. */ }
   }
 
   async function handleTriageTo(task: Task, type: "goal" | "delete", goalId?: string) {
+    try {
     if (type === "delete") {
       await removeTask(task.id);
     } else if (type === "goal" && goalId) {
@@ -30,6 +35,8 @@ export default function Inbox() {
     }
     setTriage(null);
     await loadInbox();
+
+    } catch { /* Keep input open; the store displays the save error. */ }
   }
 
   return (
@@ -75,7 +82,7 @@ export default function Inbox() {
 
       {triage && (
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setTriage(null)}>
-          <div className="modal">
+          <div className="modal"><MutationFeedback />
             <h3 style={{ marginBottom: 4 }}>Triage</h3>
             <p style={{ color: "var(--accent)", fontSize: 14, marginBottom: 16 }}>{triage.task.title}</p>
             <div className="triage-opts">

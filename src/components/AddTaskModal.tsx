@@ -1,3 +1,4 @@
+import MutationFeedback from "./MutationFeedback";
 import { useState, useEffect } from "react";
 import type { Task, TaskType, RecurrenceType } from "../db/types";
 import { useStore } from "../store";
@@ -48,6 +49,7 @@ export default function AddTaskModal({ onClose, editTask, defaultGoalId, default
   }
 
   async function handleSave() {
+    try {
     if (!title.trim()) return;
     const isRecurring = taskType === "recurring";
     const data = {
@@ -61,16 +63,25 @@ export default function AddTaskModal({ onClose, editTask, defaultGoalId, default
       recurrence_end_date: isRecurring && recurEnd ? recurEnd : undefined,
     };
     if (editTask) {
-      await updateTask(editTask.id, { ...data, is_urgent: isUrgent ? 1 : 0 });
+      const edited = {
+        ...data, is_urgent: isUrgent ? 1 : 0,
+        due_date: data.due_date ?? null, parent_goal_id: data.parent_goal_id ?? null,
+        recurrence_type: data.recurrence_type ?? null, recurrence_days: data.recurrence_days ?? null,
+        recurrence_end_date: data.recurrence_end_date ?? null,
+      };
+      const changed = Object.fromEntries(Object.entries(edited).filter(([key,value]) => value !== editTask[key as keyof Task]));
+      if (Object.keys(changed).length) await updateTask(editTask.id, changed);
     } else {
       await addTask({ ...data, parent_task_id: defaultParentTaskId });
     }
     onClose();
+
+    } catch { /* Keep input open; the store displays the save error. */ }
   }
 
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal">
+      <div className="modal"><MutationFeedback />
         <h3>{editTask ? "Edit Task" : defaultParentTaskId ? "Add Subtask" : "Add Task"}</h3>
         {parentTask && (
           <p style={{ color: "var(--text2)", fontSize: 12, marginBottom: 10 }}>

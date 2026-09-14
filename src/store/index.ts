@@ -1,184 +1,78 @@
-import { create } from "zustand";
-import type { Goal, Task, Habit, HabitLog, TaskType, RecurrenceType } from "../db/types";
-import { getGoals, createGoal, updateGoal, deleteGoal, setGoalStatus } from "../db/goals";
-import {
-  getAllTasks, getInboxTasks, createTask, setTaskStatus,
-  deleteTask, updateTask, getWeeklySummary,
-  getTodayCompletions, toggleTaskCompletion,
-} from "../db/tasks";
-import { getHabits, createHabit, deleteHabit, getHabitLogs, toggleHabitLog } from "../db/habits";
-import { toLocalDateKey } from "../utils/date";
-
-export type View = "inbox" | "today" | "tasks" | "weekly" | "goals" | "habits" | "calendar" | "performance";
-export type Theme = "cosmic" | "arctic" | "midnight";
-
-export const THEMES: { id: Theme; name: string; dot1: string; dot2: string }[] = [
-  { id: "cosmic",   name: "Cosmic",   dot1: "#7c3aed", dot2: "#ec4899" },
-  { id: "arctic",   name: "Arctic",   dot1: "#7c3aed", dot2: "#6366f1" },
-  { id: "midnight", name: "Midnight", dot1: "#3b82f6", dot2: "#f59e0b" },
+import { create } from 'zustand';
+import type { Goal, Task, Habit, HabitLog } from '../db/types';
+import type { CreateGoal, EditGoal, CreateTask, EditTask, CreateHabit, Snapshot, PerformanceSource, WeeklySummary } from '../../shared/api';
+import { api } from '../db';
+import * as goalsDb from '../db/goals';
+import * as tasksDb from '../db/tasks';
+import * as habitsDb from '../db/habits';
+import { toLocalDateKey } from '../utils/date';
+export type View = 'inbox' | 'today' | 'tasks' | 'weekly' | 'goals' | 'habits' | 'calendar' | 'performance';
+export type Theme = 'cosmic' | 'arctic' | 'midnight';
+export const THEMES: {id: Theme; name: string; dot1: string; dot2: string}[] = [
+  { id: 'cosmic', name: 'Cosmic', dot1: '#7c3aed', dot2: '#ec4899' },
+  { id: 'arctic', name: 'Arctic', dot1: '#7c3aed', dot2: '#6366f1' },
+  { id: 'midnight', name: 'Midnight', dot1: '#3b82f6', dot2: '#f59e0b' },
 ];
-
-interface WeeklySummary {
-  done: Task[];
-  remaining: Task[];
-}
-
 interface AppState {
-  view: View;
-  theme: Theme;
-  setTheme: (t: Theme) => void;
-  goals: Goal[];
-  tasks: Task[];
-  inboxTasks: Task[];
-  habits: Habit[];
-  habitLogs: Record<string, HabitLog[]>;
-  weeklySummary: WeeklySummary | null;
-  todayCompletions: string[]; // task IDs completed today
-  loading: boolean;
-  focusMode: boolean;
-  setFocusMode: (v: boolean) => void;
-
-  setView: (v: View) => Promise<void>;
-
-  loadGoals: () => Promise<void>;
-  addGoal: (data: { title: string; description?: string; target_date?: string; parent_goal_id?: string }) => Promise<void>;
-  editGoal: (id: string, data: Partial<Pick<Goal, "title" | "description" | "target_date" | "status">>) => Promise<void>;
-  removeGoal: (id: string) => Promise<void>;
-  completeGoal: (id: string) => Promise<void>;
-
-  loadTasks: () => Promise<void>;
-  loadInbox: () => Promise<void>;
-  addTask: (data: {
-    title: string;
-    due_date?: string;
-    is_urgent?: boolean;
-    parent_goal_id?: string;
-    parent_task_id?: string;
-    task_type?: TaskType;
-    recurrence_type?: RecurrenceType;
-    recurrence_days?: string;
-    recurrence_end_date?: string;
-  }) => Promise<void>;
-  cycleTaskStatus: (id: string, currentStatus: string) => Promise<void>;
-  toggleRecurring: (taskId: string) => Promise<void>;
-  editTask: (id: string, data: Partial<Pick<Task,
-    "title" | "status" | "due_date" | "is_urgent" | "parent_goal_id" | "parent_task_id" |
-    "task_type" | "recurrence_type" | "recurrence_days" | "recurrence_end_date"
-  >>) => Promise<void>;
-  removeTask: (id: string) => Promise<void>;
-  triageTask: (id: string, goalId: string) => Promise<void>;
-  loadTodayCompletions: () => Promise<void>;
-
-  loadHabits: () => Promise<void>;
-  loadHabitLogs: (habitId: string) => Promise<void>;
-  addHabit: (data: { name: string; frequency: "daily" | "weekly" }) => Promise<void>;
-  removeHabit: (id: string) => Promise<void>;
-  toggleHabit: (habitId: string, date: string) => Promise<void>;
-
-  loadWeekly: () => Promise<void>;
-  loadAll: () => Promise<void>;
+  view: View; theme: Theme; setTheme: (theme: Theme) => void;
+  goals: Goal[]; tasks: Task[]; inboxTasks: Task[]; habits: Habit[];
+  habitLogs: Record<string, HabitLog[]>; weeklySummary: WeeklySummary | null;
+  performanceSource: PerformanceSource | null; todayCompletions: string[];
+  loading: boolean; loaded: boolean; error: string | null; connected: boolean; pending: number;
+  focusMode: boolean; setFocusMode: (value: boolean) => void;
+  setView: (view: View) => Promise<void>; loadAll: () => Promise<void>; refresh: () => Promise<void>;
+  loadGoals: () => Promise<void>; loadTasks: () => Promise<void>; loadInbox: () => Promise<void>;
+  loadHabits: () => Promise<void>; loadHabitLogs: (id: string) => Promise<void>; loadWeekly: () => Promise<void>; loadTodayCompletions: () => Promise<void>;
+  addGoal: (data: CreateGoal) => Promise<void>; editGoal: (id: string, data: EditGoal) => Promise<void>; removeGoal: (id: string) => Promise<void>; completeGoal: (id: string) => Promise<void>;
+  addTask: (data: CreateTask) => Promise<void>; editTask: (id: string, data: EditTask) => Promise<void>; removeTask: (id: string) => Promise<void>; triageTask: (id: string, goal: string) => Promise<void>; cycleTaskStatus: (id: string, current: string) => Promise<void>; toggleRecurring: (id: string) => Promise<void>;
+  addHabit: (data: CreateHabit) => Promise<void>; removeHabit: (id: string) => Promise<void>; completeHabit: (id: string) => Promise<void>; resumeHabit: (id: string) => Promise<void>; toggleHabit: (id: string, date: string) => Promise<void>;
+  clearError: () => void; reset: () => void;
 }
-
-export const useStore = create<AppState>((set, get) => ({
-  view: "today",
-  theme: (localStorage.getItem("mycoach-theme") as Theme) ?? "cosmic",
-  setTheme: (t) => {
-    document.documentElement.setAttribute("data-theme", t);
-    localStorage.setItem("mycoach-theme", t);
-    set({ theme: t });
-  },
-  goals: [],
-  tasks: [],
-  inboxTasks: [],
-  habits: [],
-  habitLogs: {},
-  weeklySummary: null,
-  todayCompletions: [],
-  loading: false,
-  focusMode: false,
-  setFocusMode: (v) => set({ focusMode: v }),
-
-  setView: async (v) => {
-    set({ view: v });
-    if (v === "weekly") await get().loadWeekly();
-    if (v === "goals") { await get().loadGoals(); await get().loadTasks(); await get().loadTodayCompletions(); }
-    if (v === "tasks") { await get().loadTasks(); await get().loadTodayCompletions(); }
-    if (v === "today") {
-      await Promise.all([get().loadTasks(), get().loadTodayCompletions(), get().loadHabits()]);
-      await Promise.all(get().habits.map(h => get().loadHabitLogs(h.id)));
+let generation = 0;
+const empty = { goals: [], tasks: [], inboxTasks: [], habits: [], habitLogs: {}, weeklySummary: null, todayCompletions: [], performanceSource: null, loaded: false };
+export const useStore = create<AppState>((set, get) => {
+  async function refresh() {
+    const ticket = ++generation;
+    try {
+      const data = await api<Snapshot>('/state');
+      if (ticket !== generation) return;
+      const habitLogs: Record<string, HabitLog[]> = {};
+      for (const log of data.habitLogs) (habitLogs[log.habit_id] ??= []).push(log);
+      set({ goals: data.goals, tasks: data.tasks, habits: data.habits, habitLogs,
+        inboxTasks: data.tasks.filter(t => !t.parent_goal_id && !t.parent_task_id && t.status === 'todo' && t.task_type === 'onetime'),
+        weeklySummary: data.weeklySummary, performanceSource: data,
+        todayCompletions: data.taskCompletions.filter(c => c.completed_date === data.today).map(c => c.task_id),
+        loaded: true, loading: false, connected: true });
+    } catch (error) {
+      if (ticket === generation) set({ loading: false, connected: false, error: (error as Error).message });
     }
-    if (v === "inbox") await Promise.all([get().loadTasks(), get().loadInbox()]);
-  },
-
-  loadGoals: async () => { set({ goals: await getGoals() }); },
-
-  addGoal: async (data) => { await createGoal(data); await get().loadGoals(); },
-  editGoal: async (id, data) => { await updateGoal(id, data); await get().loadGoals(); },
-  removeGoal: async (id) => { await deleteGoal(id); await Promise.all([get().loadGoals(), get().loadTasks()]); },
-  completeGoal: async (id) => { await setGoalStatus(id, "completed"); await get().loadGoals(); },
-
-  loadTasks: async () => { set({ tasks: await getAllTasks() }); },
-  loadInbox: async () => { set({ inboxTasks: await getInboxTasks() }); },
-
-  addTask: async (data) => {
-    await createTask(data);
-    await Promise.all([get().loadTasks(), get().loadInbox()]);
-  },
-
-  cycleTaskStatus: async (id, currentStatus) => {
-    const next = currentStatus === "todo" ? "in_progress" : currentStatus === "in_progress" ? "done" : "todo";
-    await setTaskStatus(id, next);
-    await Promise.all([get().loadTasks(), get().loadInbox(), get().loadWeekly(), get().loadTodayCompletions()]);
-  },
-
-  toggleRecurring: async (taskId) => {
-    await toggleTaskCompletion(taskId);
-    await get().loadTodayCompletions();
-  },
-
-  editTask: async (id, data) => {
-    await updateTask(id, data);
-    await Promise.all([get().loadTasks(), get().loadInbox()]);
-  },
-
-  removeTask: async (id) => {
-    await deleteTask(id);
-    await Promise.all([get().loadTasks(), get().loadInbox()]);
-  },
-
-  triageTask: async (id, goalId) => {
-    await updateTask(id, { parent_goal_id: goalId });
-    await Promise.all([get().loadTasks(), get().loadInbox()]);
-  },
-
-  loadTodayCompletions: async () => {
-    set({ todayCompletions: await getTodayCompletions() });
-  },
-
-  loadHabits: async () => { set({ habits: await getHabits() }); },
-  loadHabitLogs: async (habitId) => {
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 89);
-    const logs = await getHabitLogs(habitId, toLocalDateKey(weekAgo));
-    set((s) => ({ habitLogs: { ...s.habitLogs, [habitId]: logs } }));
-  },
-  addHabit: async (data) => { await createHabit(data); await get().loadHabits(); },
-  removeHabit: async (id) => { await deleteHabit(id); await get().loadHabits(); },
-  toggleHabit: async (habitId, date) => { await toggleHabitLog(habitId, date); await get().loadHabitLogs(habitId); },
-
-  loadWeekly: async () => { set({ weeklySummary: await getWeeklySummary() }); },
-
-  loadAll: async () => {
-    set({ loading: true });
-    await Promise.all([
-      get().loadGoals(),
-      get().loadTasks(),
-      get().loadInbox(),
-      get().loadHabits(),
-      get().loadWeekly(),
-      get().loadTodayCompletions(),
-    ]);
-    await Promise.all(get().habits.map(h => get().loadHabitLogs(h.id)));
-    set({ loading: false });
-  },
-}));
+  }
+  async function mutate(operation: () => Promise<unknown>) {
+    if (get().pending) throw new Error('Wait for the current save to finish.');
+    ++generation;
+    set({ pending: 1, error: null });
+    try { await operation(); }
+    catch (error) { set({ error: (error as Error).message }); throw error; }
+    finally { set({ pending: 0 }); await refresh(); }
+  }
+  return {
+    ...empty, view: 'today', theme: (localStorage.getItem('mycoach-theme') as Theme) ?? 'cosmic',
+    setTheme: theme => { localStorage.setItem('mycoach-theme', theme); document.documentElement.setAttribute('data-theme', theme); set({theme}); },
+    loading: false, error: null, connected: true, pending: 0, focusMode: false,
+    setFocusMode: focusMode => set({focusMode}), clearError: () => set({error: null}),
+    reset: () => { ++generation; set({...empty, error:null}); },
+    setView: async view => { set({view}); await refresh(); },
+    refresh, loadAll: async () => { if (!get().loaded) set({loading:true}); await refresh(); },
+    loadGoals: refresh, loadTasks: refresh, loadInbox: refresh, loadHabits: refresh,
+    loadHabitLogs: async () => {}, loadWeekly: refresh, loadTodayCompletions: refresh,
+    addGoal: data => mutate(() => goalsDb.createGoal(data)), editGoal: (id,data) => mutate(() => goalsDb.updateGoal(id,data)),
+    removeGoal: id => mutate(() => goalsDb.deleteGoal(id)), completeGoal: id => mutate(() => goalsDb.setGoalStatus(id,'completed')),
+    addTask: data => mutate(() => tasksDb.createTask(data)), editTask: (id,data) => mutate(() => tasksDb.updateTask(id,data)),
+    removeTask: id => mutate(() => tasksDb.deleteTask(id)), triageTask: (id,goal) => mutate(() => tasksDb.updateTask(id,{parent_goal_id:goal})),
+    cycleTaskStatus: (id,current) => mutate(() => tasksDb.setTaskStatus(id,current === 'todo' ? 'in_progress' : current === 'in_progress' ? 'done' : 'todo')),
+    toggleRecurring: id => { const checked = !get().todayCompletions.includes(id); return mutate(() => tasksDb.setTaskCompletion(id,toLocalDateKey(),checked)); },
+    addHabit: data => mutate(() => habitsDb.createHabit(data)), removeHabit: id => mutate(() => habitsDb.deleteHabit(id)),
+    completeHabit: id => mutate(() => habitsDb.finishHabit(id)), resumeHabit: id => mutate(() => habitsDb.reopenHabit(id)),
+    toggleHabit: (id,date) => { const checked = !(get().habitLogs[id] ?? []).some(l => l.logged_date === date); return mutate(() => habitsDb.setHabitLog(id,date,checked)); },
+  };
+});

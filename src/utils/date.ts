@@ -1,6 +1,9 @@
+import { instantDateKey, dateAdd, dateDay } from "../../shared/date";
+export { instantDateKey, timestampDate } from "../../shared/date";
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-export function toLocalDateKey(date = new Date()): string {
+export function toLocalDateKey(date?: Date): string {
+  if (!date) return instantDateKey();
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
@@ -12,11 +15,8 @@ export function parseDateKey(value: string): Date {
   return new Date(year, month - 1, day, 12);
 }
 
-export function addDays(value: string, amount: number): string {
-  const date = parseDateKey(value);
-  date.setDate(date.getDate() + amount);
-  return toLocalDateKey(date);
-}
+export function appCalendarDate(): Date { return parseDateKey(instantDateKey()); }
+export function addDays(value: string, amount: number): string { return dateAdd(value, amount); }
 
 export function daysBetween(start: string, end: string): number {
   const a = parseDateKey(start);
@@ -34,10 +34,8 @@ export function eachDate(start: string, end: string): string[] {
 }
 
 export function startOfWeek(value: string): string {
-  const date = parseDateKey(value);
-  const day = date.getDay();
-  date.setDate(date.getDate() - (day === 0 ? 6 : day - 1));
-  return toLocalDateKey(date);
+  const day = dateDay(value);
+  return dateAdd(value, -(day === 0 ? 6 : day - 1));
 }
 
 export function endOfWeek(value: string): string {

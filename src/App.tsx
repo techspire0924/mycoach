@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
-import { getCurrentWindow } from "@tauri-apps/api/window";
-import { LogicalSize } from "@tauri-apps/api/dpi";
+import { useEffect, useRef, useState } from "react";
 import twemoji from "twemoji";
 import { useStore } from "./store";
+import { appCalendarDate } from "./utils/date";
+import { api } from "./db";
 import Sidebar from "./components/Sidebar";
 import QuickAddModal from "./components/QuickAddModal";
 import Inbox from "./views/Inbox";
@@ -25,89 +25,105 @@ const VIEW_TITLES: Record<string, string> = {
   performance: "Performance Tracker",
 };
 
-const NO_WINDOW_DRAG =
-  "button, a, input, select, textarea, label, [contenteditable], [role='button'], " +
-  "[data-cursor='interactive'], .task-item, .inbox-item, .habit-card, .week-stat, " +
-  ".modal, .modal-overlay, .cal-week-col, .cal-chip, .performance-page";
-
 export default function App() {
   const { view, setView, loadAll, loading, focusMode, setFocusMode } = useStore();
   const [quickAdd, setQuickAdd] = useState(false);
-  const [pinned, setPinned] = useState(false);
-  const isTauri = "__TAURI_INTERNALS__" in window;
+  const { loaded, error, connected, pending, refresh, clearError } = useStore();
+  const [navigationOpen, setNavigationOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [compact, setCompact] = useState(() => window.matchMedia('(max-width: 900px)').matches);
+  const navigationToggle = useRef<HTMLButtonElement>(null);
+  const main = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 900px)');
+    const resize = () => { setCompact(query.matches); setNavigationOpen(false); };
+    query.addEventListener('change', resize);
+    return () => query.removeEventListener('change', resize);
+  }, []);
+  useEffect(() => {
+    if (!navigationOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    main.current?.setAttribute('inert', '');
+    const close = () => { setNavigationOpen(false); navigationToggle.current?.focus(); };
+    const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') close(); };
+    document.addEventListener('keydown', escape);
+    document.querySelector<HTMLButtonElement>('.sidebar-close')?.focus();
+    return () => {
+      document.body.style.overflow = previous;
+      main.current?.removeAttribute('inert');
+      document.removeEventListener('keydown', escape);
+      navigationToggle.current?.focus();
+    };
+  }, [navigationOpen]);
+  useEffect(() => { window.scrollTo({ top: 0 }); }, [view, focusMode]);
   const isPerformancePreview = import.meta.env.DEV &&
     new URLSearchParams(window.location.search).get("preview") === "performance";
-  const win = isTauri ? getCurrentWindow() : null;
 
   useEffect(() => {
-    if (isPerformancePreview) setView("performance");
-    else loadAll();
-    win?.clearEffects().catch(() => {});
-
-    function onMouseDown(e: MouseEvent) {
-      if (e.button !== 0) return;
-      if (!(e.target as HTMLElement).closest(NO_WINDOW_DRAG)) {
-        win?.startDragging().catch(() => {});
+    if (isPerformancePreview) void setView("performance");
+    else void loadAll();
+    const sync = () => { if (!document.hidden && !useStore.getState().pending) void refresh(); };
+    const timer = window.setInterval(sync, 5000);
+    document.addEventListener("visibilitychange", sync);
+    window.addEventListener("focus", sync);
+    window.addEventListener("online", sync);
+    const onFailure = (event: PromiseRejectionEvent) => {
+      if (event.reason instanceof Error) {
+        useStore.setState({ error: event.reason.message });
+        event.preventDefault();
       }
-    }
-
-    document.addEventListener("mousedown", onMouseDown);
-    return () => document.removeEventListener("mousedown", onMouseDown);
+    };
+    window.addEventListener("unhandledrejection", onFailure);
+    return () => {
+      clearInterval(timer); document.removeEventListener("visibilitychange", sync);
+      window.removeEventListener("focus", sync); window.removeEventListener("online", sync);
+      window.removeEventListener("unhandledrejection", onFailure);
+    };
   }, []);
 
   useEffect(() => {
     const id = setTimeout(() => {
-      twemoji.parse(document.body, { folder: "svg", ext: ".svg", className: "twemoji" });
+      twemoji.parse(document.body, { base: "/emoji/", folder: "svg", ext: ".svg", className: "twemoji" });
     }, 50);
     return () => clearTimeout(id);
   }, [view, loading, quickAdd]);
 
-  async function togglePin() {
-    if (!win) return;
-    const next = !pinned;
-    setPinned(next);
-    await win.setAlwaysOnTop(next);
-    await win.setVisibleOnAllWorkspaces(next);
+  function toggleFocus() { setFocusMode(!focusMode); }
+  async function logout() {
+    await api("/auth/logout", "POST");
+    window.dispatchEvent(new Event("mycoach-logged-out"));
   }
 
-  async function toggleFocus() {
-    if (!win) return;
-    const next = !focusMode;
-    setFocusMode(next);
-    if (next) {
-      await win.setMinSize(new LogicalSize(340, 400));
-      await win.setSize(new LogicalSize(340, 720));
-    } else {
-      await win.setMinSize(new LogicalSize(900, 600));
-      await win.setSize(new LogicalSize(1200, 800));
-    }
-  }
-
-  const today = new Date().toLocaleDateString("en-US", {
+  const today = appCalendarDate().toLocaleDateString("en-US", {
     weekday: "long", month: "long", day: "numeric", year: "numeric",
   });
 
   return (
-    <div className={`layout${focusMode ? " focus-mode" : ""}`}>
-      {!focusMode && <Sidebar onQuickAdd={() => setQuickAdd(true)} />}
-      <main className="main">
-        <div className="topbar" data-tauri-drag-region>
+    <div className={`layout${focusMode ? " focus-mode" : ""}${navigationOpen ? " navigation-open" : ""}${sidebarCollapsed && !compact ? " sidebar-collapsed" : ""}`}>
+      {!focusMode && <Sidebar onQuickAdd={() => { setNavigationOpen(false); setQuickAdd(true); }} onNavigate={() => setNavigationOpen(false)} />}
+      {navigationOpen && <button className="navigation-backdrop" aria-label="Dismiss navigation" tabIndex={-1} onClick={() => setNavigationOpen(false)} />}
+      <main className="main" ref={main}>
+        <div className="topbar">
+          {!focusMode && <button className="btn btn-ghost nav-toggle" aria-label="Toggle navigation" ref={navigationToggle} aria-controls="app-navigation" aria-expanded={compact ? navigationOpen : !sidebarCollapsed} onClick={() => compact ? setNavigationOpen(!navigationOpen) : setSidebarCollapsed(!sidebarCollapsed)}>☰</button>}
           {focusMode
             ? <h2 className="focus-title">☀️ Today</h2>
             : <h2>{VIEW_TITLES[view]}</h2>}
           <div className="topbar-right">
             {!focusMode && <span className="topbar-date">{today}</span>}
-            <button className={`pin-btn${pinned ? " active" : ""}`} onClick={togglePin} title={pinned ? "Unpin window" : "Pin on top"}>
-              📌
-            </button>
             <button className={`focus-btn${focusMode ? " active" : ""}`} onClick={toggleFocus} title={focusMode ? "Exit Focus" : "Focus Mode"}>
               {focusMode ? "✕ Exit Focus" : "⊙ Focus"}
             </button>
+            <button className="btn btn-ghost" onClick={() => void logout()}>Sign out</button>
           </div>
         </div>
-        <div className="content">
+        {error && <div className="connection-banner" role="alert"><span>{error}</span><button className="btn btn-ghost" onClick={() => { clearError(); void refresh(); }}>Retry</button><button className="btn btn-ghost" aria-label="Dismiss error" onClick={clearError}>×</button></div>}
+        <div className="connection-status" role="status">{pending ? "Saving…" : connected ? "Connected · Shared on your home network" : "Disconnected · Reconnect to save"}</div>
+        <div className="content" aria-busy={loading}>
           {loading ? (
             <div className="empty-state"><p>Loading...</p></div>
+          ) : !loaded && !isPerformancePreview ? (
+            <div className="empty-state"><p>Unable to load your data.</p><button className="btn btn-primary" onClick={() => void loadAll()}>Retry</button></div>
           ) : focusMode ? (
             <Today />
           ) : isPerformancePreview ? (

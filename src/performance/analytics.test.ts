@@ -61,6 +61,7 @@ function habit(overrides: Partial<Habit> = {}): Habit {
     name: "Test habit",
     frequency: "daily",
     created_at: "2026-07-01T12:00:00.000Z",
+    finished_at: null,
     ...overrides,
   };
 }
@@ -238,6 +239,35 @@ describe("habit performance", () => {
     expect(result.expected).toBe(2);
     expect(result.pending).toBe(0);
     expect(result.currentStreak).toBe(2);
+    expect(result.rate).toBe(100);
+  });
+
+  it("stops counting a finished daily habit after its finish date", () => {
+    const result = computeHabitPerformance(
+      habit({ finished_at: "2026-07-03T09:00:00.000Z" }),
+      [habitLog("2026-07-01"), habitLog("2026-07-03")],
+      "all",
+      "2026-07-10",
+    );
+    expect(result.cells[result.cells.length - 1].date).toBe("2026-07-03");
+    expect(result.completed).toBe(2);
+    expect(result.missed).toBe(1);
+    expect(result.pending).toBe(0);
+    expect(result.expected).toBe(3);
+    expect(result.finishedAt).toBe("2026-07-03T09:00:00.000Z");
+  });
+
+  it("ignores the truncated final week of a finished weekly habit", () => {
+    const result = computeHabitPerformance(
+      habit({ frequency: "weekly", finished_at: "2026-07-08T09:00:00.000Z" }),
+      [habitLog("2026-07-02")],
+      "all",
+      "2026-07-20",
+    );
+    // Week of Jun 29 completed; the Jul 6–8 stub is neither missed nor pending.
+    expect(result.completed).toBe(1);
+    expect(result.expected).toBe(1);
+    expect(result.pending).toBe(0);
     expect(result.rate).toBe(100);
   });
 });
