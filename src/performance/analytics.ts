@@ -8,7 +8,10 @@ import type {
 } from "../db/types";
 import {
   addDays,
+  instantDateKey,
+  timestampDate,
   eachDate,
+  earliestDate,
   endOfWeek,
   latestDate,
   parseDateKey,
@@ -52,6 +55,7 @@ export interface ScheduledPerformance {
   currentStreak: number;
   longestStreak: number;
   hasPartialHistory: boolean;
+  finishedAt: string | null;
 }
 
 const RANGE_DAYS: Record<Exclude<PerformanceRange, "all">, number> = {
@@ -66,7 +70,7 @@ export function rangeStart(range: PerformanceRange, today = toLocalDateKey()): s
 }
 
 function toMs(value: string): number {
-  return new Date(value).getTime();
+  return timestampDate(value).getTime();
 }
 
 function sortedEvents(events: TaskStatusEvent[]): TaskStatusEvent[] {
@@ -201,7 +205,7 @@ function exactFinishDate(task: Task, events: TaskStatusEvent[]): string | null {
   const doneEvents = sortedEvents(events)
     .filter((event) => event.is_baseline !== 1 && event.to_status === "done");
   const done = doneEvents[doneEvents.length - 1];
-  return done?.occurred_at.slice(0, 10) ?? null;
+  return done ? instantDateKey(done.occurred_at) : null;
 }
 
 export function computeRecurringPerformance(
@@ -215,7 +219,7 @@ export function computeRecurringPerformance(
     .filter((completion) => completion.task_id === task.id)
     .map((completion) => completion.completed_date);
   const completionSet = new Set(taskCompletions);
-  const created = task.created_at.slice(0, 10);
+  const created = instantDateKey(task.created_at);
   const start = latestDate(created, rangeStart(range, today)) ?? created;
   const exactFinish = exactFinishDate(task, events.filter((event) => event.task_id === task.id));
   let end = [today, task.recurrence_end_date, exactFinish]
@@ -259,7 +263,15 @@ export function computeRecurringPerformance(
     cells,
     ...summarizeCells(cells, expectedStatuses),
     hasPartialHistory,
+    finishedAt: null,
   };
+}
+
+// A finished habit stops being scheduled after its finish date, so history
+// stays visible without the trailing days counting as misses.
+function habitEndDate(habit: Habit, today: string): string {
+  const finished = habit.finished_at ? instantDateKey(habit.finished_at) : null;
+  return earliestDate(finished, today) ?? today;
 }
 
 function computeDailyHabit(
@@ -268,10 +280,11 @@ function computeDailyHabit(
   range: PerformanceRange,
   today: string,
 ): ScheduledPerformance {
-  const created = habit.created_at.slice(0, 10);
+  const created = instantDateKey(habit.created_at);
   const start = latestDate(created, rangeStart(range, today)) ?? created;
+  const end = habitEndDate(habit, today);
   const logSet = new Set(logs.map((log) => log.logged_date));
-  const cells = eachDate(start, today).map<HeatmapDay>((date) => ({
+  const cells = eachDate(start, end).map<HeatmapDay>((date) => ({
     date,
     status: logSet.has(date) ? "completed" : date === today ? "pending" : "missed",
   }));
@@ -284,6 +297,7 @@ function computeDailyHabit(
     cells,
     ...summarizeCells(cells, statuses),
     hasPartialHistory: false,
+    finishedAt: habit.finished_at,
   };
 }
 
@@ -293,20 +307,22 @@ function computeWeeklyHabit(
   range: PerformanceRange,
   today: string,
 ): ScheduledPerformance {
-  const created = habit.created_at.slice(0, 10);
+  const created = instantDateKey(habit.created_at);
   const start = latestDate(created, rangeStart(range, today)) ?? created;
-  const cells = eachDate(start, today).map<HeatmapDay>((date) => ({
+  const end = habitEndDate(habit, today);
+  const cells = eachDate(start, end).map<HeatmapDay>((date) => ({
     date,
     status: "not_scheduled",
   }));
   const cellMap = new Map(cells.map((cell) => [cell.date, cell]));
   const statuses: HeatmapStatus[] = [];
   const firstWeek = startOfWeek(start);
-  const currentWeek = startOfWeek(today);
+  const lastWeek = startOfWeek(end);
+  const finishedEarly = end < today;
 
-  for (let week = firstWeek; week <= currentWeek; week = addDays(week, 7)) {
+  for (let week = firstWeek; week <= lastWeek; week = addDays(week, 7)) {
     const weekStart = week < created ? created : week;
-    const weekEnd = endOfWeek(week) > today ? today : endOfWeek(week);
+    const weekEnd = endOfWeek(week) > end ? end : endOfWeek(week);
     if (weekEnd < start) continue;
     const weekLogs = logs
       .map((log) => log.logged_date)
@@ -319,10 +335,13 @@ function computeWeeklyHabit(
         const cell = cellMap.get(date);
         if (cell) cell.status = "completed";
       });
-    } else if (week === currentWeek) {
+    } else if (week === lastWeek && !finishedEarly) {
       statuses.push("pending");
-      const cell = cellMap.get(today);
+      const cell = cellMap.get(end);
       if (cell) cell.status = "pending";
+    } else if (week === lastWeek && weekEnd < endOfWeek(week)) {
+      // Habit finished mid-week: the truncated week is not a missed week.
+      continue;
     } else {
       statuses.push("missed");
       const marker = weekEnd < start ? start : weekEnd;
@@ -339,6 +358,7 @@ function computeWeeklyHabit(
     cells,
     ...summarizeCells(cells, statuses),
     hasPartialHistory: false,
+    finishedAt: habit.finished_at,
   };
 }
 

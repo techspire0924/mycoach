@@ -3,12 +3,12 @@ import { useStore } from "../store";
 import type { Task } from "../db/types";
 import TaskItem from "../components/TaskItem";
 import AddTaskModal from "../components/AddTaskModal";
-import { toLocalDateKey } from "../utils/date";
+import { toLocalDateKey, appCalendarDate } from "../utils/date";
 
-const TODAY = toLocalDateKey();
-const TODAY_DOW = new Date().getDay(); // 0=Sun
+
 
 function showsToday(t: Task): boolean {
+  const TODAY_DOW = appCalendarDate().getDay();
   if (t.task_type === "onetime") return t.status !== "done";
   // Recurring: only hide permanently finished
   if (t.status === "done") return false;
@@ -22,6 +22,7 @@ function showsToday(t: Task): boolean {
 }
 
 export default function Daily() {
+  const TODAY = toLocalDateKey();
   const { tasks, goals, todayCompletions } = useStore();
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [addingToGoal, setAddingToGoal] = useState<string | undefined>(undefined);

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { getPerformanceSource, type PerformanceSource } from "../db/performance";
+import type { PerformanceSource } from "../db/performance";
+import { useStore } from "../store";
 import type { Goal } from "../db/types";
 import {
   average,
@@ -14,7 +15,7 @@ import {
   type PerformanceRange,
   type ScheduledPerformance,
 } from "../performance/analytics";
-import { formatDateKey, parseDateKey } from "../utils/date";
+import { formatDateKey, parseDateKey, instantDateKey, timestampDate } from "../utils/date";
 
 type Tab = "overview" | "onetime" | "recurring" | "habits";
 type OneTimeSort = "created" | "backlog" | "active" | "finished" | "total";
@@ -35,7 +36,8 @@ const DETAIL_RANGES: Array<{ id: PerformanceRange; label: string }> = [
 
 function shortDate(timestamp: string | null): string {
   if (!timestamp) return "Unknown";
-  return new Date(timestamp).toLocaleDateString("en-US", {
+  return timestampDate(timestamp).toLocaleDateString("en-US", {
+    timeZone: "America/Chicago",
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -43,7 +45,8 @@ function shortDate(timestamp: string | null): string {
 }
 
 function fullDateTime(timestamp: string): string {
-  return new Date(timestamp).toLocaleString("en-US", {
+  return timestampDate(timestamp).toLocaleString("en-US", {
+    timeZone: "America/Chicago",
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -234,8 +237,14 @@ function ScheduledDetail({
     <div className="performance-detail">
       <div className="performance-detail-heading scheduled-detail-heading">
         <div>
-          <h3>{item.title}</h3>
-          <span>{item.scheduleLabel} · Created {shortDate(item.createdAt)}</span>
+          <h3>
+            {item.title}
+            {item.finishedAt && <span className="performance-finished-tag">Finished</span>}
+          </h3>
+          <span>
+            {item.scheduleLabel} · Created {shortDate(item.createdAt)}
+            {item.finishedAt ? ` · Finished ${shortDate(item.finishedAt)}` : ""}
+          </span>
         </div>
         <RangeButtons value={range} options={DETAIL_RANGES} onChange={setRange} />
       </div>
@@ -326,8 +335,14 @@ function ScheduledCards({
         >
           <div className="scheduled-card-heading">
             <div>
-              <strong>{item.title}</strong>
-              <span>{item.scheduleLabel} · {shortDate(item.createdAt)}</span>
+              <strong>
+                {item.title}
+                {item.finishedAt && <span className="performance-finished-tag">Finished</span>}
+              </strong>
+              <span>
+                {item.scheduleLabel} · {shortDate(item.createdAt)}
+                {item.finishedAt ? ` → ${shortDate(item.finishedAt)}` : ""}
+              </span>
             </div>
             <b>{rateLabel(item.rate)}</b>
           </div>
@@ -343,9 +358,9 @@ function ScheduledCards({
 }
 
 export default function Performance() {
-  const [source, setSource] = useState<PerformanceSource | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const sharedSource = useStore(s => s.performanceSource);
+  const [demo, setDemo] = useState<PerformanceSource | null>(null);
+  const source = demo ?? sharedSource;
   const [range, setRange] = useState<PerformanceRange>("30d");
   const [detailRange, setDetailRange] = useState<PerformanceRange>("1y");
   const [tab, setTab] = useState<Tab>("overview");
@@ -359,25 +374,11 @@ export default function Performance() {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    const isPreview = import.meta.env.DEV &&
-      new URLSearchParams(window.location.search).get("preview") === "performance";
-    const sourcePromise = isPreview
-      ? import("../performance/demo").then(({ getPerformanceDemoSource }) => getPerformanceDemoSource())
-      : getPerformanceSource();
-    sourcePromise
-      .then((data) => {
-        if (!cancelled) {
-          setSource(data);
-          setError(null);
-        }
-      })
-      .catch((reason: unknown) => {
-        if (!cancelled) setError(reason instanceof Error ? reason.message : "Unable to load performance data.");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
+    if (import.meta.env.DEV && new URLSearchParams(window.location.search).get("preview") === "performance") {
+      import("../performance/demo").then(({ getPerformanceDemoSource }) => {
+        if (!cancelled) setDemo(getPerformanceDemoSource());
       });
+    }
     return () => { cancelled = true; };
   }, []);
 
@@ -402,13 +403,18 @@ export default function Performance() {
 
   const habitItems = useMemo(() => {
     if (!source) return [];
-    return source.habits.map((habit) =>
-      computeHabitPerformance(habit, source.habitLogs, range)
-    );
+    return source.habits
+      .map((habit) => computeHabitPerformance(habit, source.habitLogs, range))
+      // Active habits lead; finished ones follow, most recently finished first.
+      .sort((a, b) => {
+        if (!a.finishedAt && !b.finishedAt) return 0;
+        if (!a.finishedAt) return -1;
+        if (!b.finishedAt) return 1;
+        return b.finishedAt.localeCompare(a.finishedAt);
+      });
   }, [source, range]);
 
-  if (loading) return <div className="performance-state"><span className="performance-spinner" />Loading performance…</div>;
-  if (error) return <div className="performance-state performance-state--error">Couldn’t load performance data.<small>{error}</small></div>;
+  if (!source) return <div className="performance-state"><span className="performance-spinner" />Loading performance…</div>;
   if (!source) return null;
 
   const normalizedSearch = search.trim().toLowerCase();
@@ -419,7 +425,7 @@ export default function Performance() {
     // A live backlog belongs in every range that includes today. For started
     // tasks, include the metric when the backlog stage ended in the range.
     return item.task.status === "todo" ||
-      Boolean(item.startedAt && item.startedAt.slice(0, 10) >= selectedRangeStart);
+      Boolean(item.startedAt && instantDateKey(item.startedAt) >= selectedRangeStart);
   });
   const activeItems = oneTimeItems.filter((item) => {
     if (item.activeMs === null || item.activePartial) return false;
@@ -427,7 +433,7 @@ export default function Performance() {
     // Current in-progress work is active in the selected range even if it
     // started earlier. Completed intervals use their finish timestamp.
     return item.task.status === "in_progress" ||
-      Boolean(item.finishedAt && item.finishedAt.slice(0, 10) >= selectedRangeStart);
+      Boolean(item.finishedAt && instantDateKey(item.finishedAt) >= selectedRangeStart);
   });
   const backlogAverage = average(backlogItems.map((item) => item.backlogMs));
   const activeAverage = average(activeItems.map((item) => item.activeMs));

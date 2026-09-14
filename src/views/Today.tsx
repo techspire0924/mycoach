@@ -3,17 +3,18 @@ import { useStore } from "../store";
 import type { Task } from "../db/types";
 import TaskItem from "../components/TaskItem";
 import AddTaskModal from "../components/AddTaskModal";
-import { toLocalDateKey } from "../utils/date";
+import { toLocalDateKey, appCalendarDate, instantDateKey } from "../utils/date";
 
-const TODAY = toLocalDateKey();
-const TODAY_DOW = new Date().getDay();
+
 
 function isRecurringToday(t: Task): boolean {
+  const TODAY_DOW = appCalendarDate().getDay();
+  const TODAY = toLocalDateKey();
   if (t.task_type !== "recurring") return false;
   if (t.status === "done") return false; // permanently finished — hide
   // Overdue (past end date but not finished) — still show with flag
   if (t.recurrence_end_date && TODAY > t.recurrence_end_date) return true;
-  if (TODAY < t.created_at.slice(0, 10)) return false;
+  if (TODAY < instantDateKey(t.created_at)) return false;
   if (t.recurrence_type === "daily") return true;
   if (t.recurrence_type === "workdays") return TODAY_DOW >= 1 && TODAY_DOW <= 5;
   if (t.recurrence_type === "custom" && t.recurrence_days)
@@ -22,8 +23,11 @@ function isRecurringToday(t: Task): boolean {
 }
 
 export default function Today() {
-  const { tasks, goals, habits, habitLogs, todayCompletions, toggleHabit } = useStore();
+  const TODAY = toLocalDateKey();
+  const { tasks, goals, habits: allHabits, habitLogs, todayCompletions, toggleHabit } = useStore();
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+
+  const habits = allHabits.filter(h => !h.finished_at);
 
   const topLevel = tasks.filter(t => !t.parent_task_id);
   const subtasksOf = (id: string) => tasks.filter(t => t.parent_task_id === id);

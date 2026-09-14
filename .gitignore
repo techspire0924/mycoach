@@ -23,3 +23,13 @@ release/
 *.njsproj
 *.sln
 *.sw?
+
+# Local web runtime and migration safety copy
+.migration-baseline/
+.data/
+.local/
+server-dist/
+playwright-report/
+test-results/
+.env
+*.tsbuildinfo

@@ -1,3 +1,4 @@
+import { appCalendarDate, instantDateKey } from "../utils/date";
 import { useState } from "react";
 import { useStore } from "../store";
 import type { Task, Goal } from "../db/types";
@@ -14,7 +15,7 @@ function fmtDate(d: Date): string {
 function taskOccursOnDate(task: Task, dateStr: string): boolean {
   if (task.task_type === "onetime") return task.due_date === dateStr;
   if (task.recurrence_end_date && dateStr > task.recurrence_end_date) return false;
-  if (dateStr < task.created_at.slice(0, 10)) return false;
+  if (dateStr < instantDateKey(task.created_at)) return false;
   const day = new Date(dateStr + "T12:00:00").getDay();
   if (task.recurrence_type === "daily") return true;
   if (task.recurrence_type === "workdays") return day >= 1 && day <= 5;
@@ -35,10 +36,10 @@ const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default function Calendar() {
   const { tasks, goals } = useStore();
-  const today = fmtDate(new Date());
+  const today = fmtDate(appCalendarDate());
 
   const [mode, setMode] = useState<CalMode>("month");
-  const [anchor, setAnchor] = useState(new Date());
+  const [anchor, setAnchor] = useState(appCalendarDate());
   const [selectedDate, setSelectedDate] = useState(today);
 
   function navigate(dir: -1 | 1) {
@@ -251,7 +252,7 @@ export default function Calendar() {
           <button className="cal-nav-btn" onClick={() => navigate(-1)}>‹</button>
           <span className="cal-nav-label">{headerLabel()}</span>
           <button className="cal-nav-btn" onClick={() => navigate(1)}>›</button>
-          <button className="cal-today-btn" onClick={() => { setAnchor(new Date()); setSelectedDate(today); }}>
+          <button className="cal-today-btn" onClick={() => { setAnchor(appCalendarDate()); setSelectedDate(today); }}>
             Today
           </button>
         </div>
@@ -267,8 +268,10 @@ export default function Calendar() {
           ))}
         </div>
       </div>
-      {mode === "month" && renderMonth()}
-      {mode === "week" && renderWeek()}
+      {mode !== "day" && <div className="cal-scroll" tabIndex={0} role="region" aria-label="Calendar dates">
+        {mode === "month" && renderMonth()}
+        {mode === "week" && renderWeek()}
+      </div>}
       {mode === "day" && renderDay()}
     </div>
   );

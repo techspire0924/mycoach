@@ -1,3 +1,4 @@
+import MutationFeedback from "../components/MutationFeedback";
 import { useState } from "react";
 import { useStore } from "../store";
 import type { Goal, Task } from "../db/types";
@@ -14,19 +15,20 @@ function EditGoalModal({ goal, onClose }: { goal: Goal; onClose: () => void }) {
   const [targetDate, setTargetDate] = useState(goal.target_date ?? "");
 
   async function handleSave() {
+    try {
     if (!title.trim()) return;
-    await editGoal(goal.id, {
-      title: title.trim(),
-      description: description.trim() || undefined,
-      target_date: targetDate || undefined,
-    });
+    const edited = { title: title.trim(), description: description.trim() || null, target_date: targetDate || null };
+    const changed = Object.fromEntries(Object.entries(edited).filter(([key,value]) => value !== goal[key as keyof Goal]));
+    if (Object.keys(changed).length) await editGoal(goal.id, changed);
     onClose();
+
+    } catch { /* Keep input open; the store displays the save error. */ }
   }
 
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal">
-        <h3>Edit Goal</h3>
+        <h3>Edit Goal</h3><MutationFeedback />
         <input className="modal-input" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
         <textarea
           className="modal-input"
@@ -46,14 +48,15 @@ function EditGoalModal({ goal, onClose }: { goal: Goal; onClose: () => void }) {
   );
 }
 
-const TODAY = toLocalDateKey();
 function isRecurringExpired(t: { task_type: string; status: string; recurrence_end_date?: string | null }) {
+  const TODAY = toLocalDateKey();
   if (t.task_type !== "recurring") return false;
   if (t.status === "done") return true; // permanently finished
   return !!t.recurrence_end_date && t.recurrence_end_date < TODAY;
 }
 
 export default function Goals() {
+  const TODAY = toLocalDateKey();
   const { goals, tasks, removeGoal, completeGoal, todayCompletions } = useStore();
   const [detailGoal, setDetailGoal] = useState<Goal | null>(null);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
@@ -92,7 +95,7 @@ export default function Goals() {
     };
   }
 
-  if (detailGoal) {
+  if (detailGoal && goals.some(g => g.id === detailGoal.id)) {
     // Refresh detailGoal from store in case it was edited
     const currentGoal = goals.find((g) => g.id === detailGoal.id) ?? detailGoal;
     const allGoalTasks = tasks.filter((t) => t.parent_goal_id === currentGoal.id && !t.parent_task_id);

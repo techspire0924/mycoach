@@ -1,3 +1,4 @@
+import MutationFeedback from "./MutationFeedback";
 import { useState } from "react";
 import { useStore } from "../store";
 import type { TaskType, RecurrenceType } from "../db/types";
@@ -36,6 +37,7 @@ export default function QuickAddModal({ onClose }: Props) {
   }
 
   async function handleSave() {
+    try {
     if (tab === "task") {
       if (!taskTitle.trim()) return;
       const isRecurring = taskType === "recurring";
@@ -59,6 +61,8 @@ export default function QuickAddModal({ onClose }: Props) {
       });
     }
     onClose();
+
+    } catch { /* Keep input open; the store displays the save error. */ }
   }
 
   function handleKey(e: React.KeyboardEvent) {
@@ -70,7 +74,7 @@ export default function QuickAddModal({ onClose }: Props) {
 
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal" onKeyDown={handleKey}>
+      <div className="modal" onKeyDown={handleKey}><MutationFeedback />
         <div className="modal-tabs">
           <button className={`modal-tab${tab === "task" ? " active" : ""}`} onClick={() => setTab("task")}>
             📋 Task
