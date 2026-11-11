@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3';
 import { createHash } from 'node:crypto';
-import { mkdirSync, readFileSync, readdirSync, renameSync, rmSync, chmodSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, chmodSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 
 export const domainTables = ['goals', 'tasks', 'habits', 'habit_logs', 'task_completions', 'task_status_events'] as const;
@@ -100,7 +100,7 @@ export async function importDatabase(source: string, target: string): Promise<vo
     validateDatabase(original);
     const before = domainSnapshot(original);
     mkdirSync(dirname(target), { recursive: true, mode: 0o700 });
-    if (readdirSync(dirname(target)).includes(target.split('/').pop()!)) throw new Error('Destination exists. Import requires an empty destination.');
+    if (existsSync(target)) throw new Error('Destination exists. Import requires an empty destination.');
     await original.backup(temp);
     const copy = new Database(temp);
     try {
